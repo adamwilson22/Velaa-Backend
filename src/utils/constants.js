@@ -490,6 +490,7 @@ const SUCCESS_MESSAGES = {
   LOGIN_SUCCESS: 'Login successful',
   LOGOUT_SUCCESS: 'Logout successful',
   REGISTRATION_SUCCESS: 'Registration successful',
+  REGISTRATION_COMPLETED: 'Registration completed successfully',
   PASSWORD_RESET_SUCCESS: 'Password reset successful',
   OTP_SENT: 'OTP sent successfully',
   OTP_VERIFIED: 'OTP verified successfully',

@@ -6,7 +6,7 @@ const connectDB = require('./src/config/database');
 const { APP_CONSTANTS } = require('./src/utils/constants');
 
 // Set port
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Connect to database
 connectDB();

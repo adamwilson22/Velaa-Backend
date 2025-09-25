@@ -370,10 +370,14 @@ const validationHelpers = {
     return emailRegex.test(email);
   },
 
-  // Validate phone number (Indian format)
+  // Validate phone number (International format)
   isValidPhone: (phone) => {
-    const phoneRegex = /^[+]?[6-9]\d{9}$/;
-    return phoneRegex.test(phone.replace(/[\s-()]/g, ''));
+    // Remove all non-digit characters except +
+    const cleanPhone = phone.replace(/[\s-()]/g, '');
+    
+    // International format: +1234567890 (10-15 digits with optional + prefix)
+    const phoneRegex = /^[+]?\d{10,15}$/;
+    return phoneRegex.test(cleanPhone);
   },
 
   // Validate PAN number

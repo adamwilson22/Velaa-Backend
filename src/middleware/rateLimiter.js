@@ -3,30 +3,12 @@ const MongoStore = require('rate-limit-mongo');
 
 // Create MongoDB store for rate limiting (optional, falls back to memory store)
 const createMongoStore = () => {
-  try {
-    return new MongoStore({
-      uri: process.env.MONGODB_URI,
-      collectionName: 'rate_limits',
-      expireTimeMs: 15 * 60 * 1000, // 15 minutes
-    });
-  } catch (error) {
-    console.warn('MongoDB store for rate limiting not available, using memory store');
-    return undefined;
-  }
+  // Temporarily disabled to fix double counting issue
+  console.log('Using memory store for rate limiting (MongoDB store disabled)');
+  return undefined;
 };
 
-// Custom key generator that includes user ID if authenticated
-const createKeyGenerator = (includeUserId = false) => {
-  return (req) => {
-    let key = req.ip;
-    
-    if (includeUserId && req.user && req.user._id) {
-      key += `:${req.user._id}`;
-    }
-    
-    return key;
-  };
-};
+// Note: Using default key generators for IPv6 compatibility with express-rate-limit v8+
 
 // Custom handler for rate limit exceeded
 const rateLimitHandler = (req, res) => {
@@ -55,7 +37,7 @@ const generalLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(false),
+  // Use default key generator for IPv6 compatibility
 });
 
 // Strict rate limiter for authentication endpoints
@@ -66,7 +48,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(false),
+  // Use default key generator for IPv6 compatibility
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
@@ -78,7 +60,7 @@ const otpLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(false),
+  // Use default key generator for IPv6 compatibility
   skipSuccessfulRequests: false, // Count all requests
 });
 
@@ -90,7 +72,7 @@ const passwordResetLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(false),
+  // Use default key generator for IPv6 compatibility
 });
 
 // API rate limiter for general API endpoints
@@ -101,7 +83,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(true), // Include user ID
+  // Use default key generator for IPv6 compatibility
 });
 
 // Upload rate limiter
@@ -112,7 +94,7 @@ const uploadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(true),
+  // Use default key generator for IPv6 compatibility
 });
 
 // Search rate limiter
@@ -123,7 +105,7 @@ const searchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(true),
+  // Use default key generator for IPv6 compatibility
 });
 
 // Report generation rate limiter
@@ -134,7 +116,7 @@ const reportLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(true),
+  // Use default key generator for IPv6 compatibility
 });
 
 // Notification rate limiter
@@ -145,7 +127,7 @@ const notificationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: createKeyGenerator(true),
+  // Use default key generator for IPv6 compatibility
 });
 
 // Create custom rate limiter
@@ -157,7 +139,7 @@ const createCustomLimiter = (options = {}) => {
     standardHeaders: true,
     legacyHeaders: false,
     store: createMongoStore(),
-    keyGenerator: createKeyGenerator(false),
+    // Uses default key generator for IPv6 compatibility
   };
 
   return rateLimit({ ...defaultOptions, ...options });
@@ -226,7 +208,7 @@ const dynamicRateLimiter = (req, res, next) => {
   
   const limiter = createCustomLimiter({
     max: maxRequests,
-    keyGenerator: createKeyGenerator(true),
+    // Uses default key generator for IPv6 compatibility
   });
   
   limiter(req, res, next);

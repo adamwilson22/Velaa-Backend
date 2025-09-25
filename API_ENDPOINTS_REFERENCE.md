@@ -13,7 +13,8 @@
 ### **📝 Public Routes (No Auth Required)**
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/auth/register` | Register new user |
+| `POST` | `/auth/register` | **Step 1:** Register with basic info |
+| `POST` | `/auth/complete-registration` | **Step 2:** Verify OTP + Set password |
 | `POST` | `/auth/verify-otp` | Verify OTP (use: 1234) |
 | `POST` | `/auth/login` | User login |
 | `POST` | `/auth/forgot-password` | Initiate password recovery |

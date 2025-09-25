@@ -12,16 +12,25 @@ const Joi = require('joi');
 const authController = require('../controllers/authController');
 
 // Public routes
+// Step 1: Initial registration (basic info + send OTP)
 router.post('/register', 
   authLimiter,
   validate(userSchemas.register),
   authController.register
 );
 
+// Step 2: Verify OTP only
 router.post('/verify-otp',
   otpLimiter,
   validate(userSchemas.verifyOtp),
   authController.verifyOtp
+);
+
+// Step 3: Complete registration (password creation only)
+router.post('/complete-registration',
+  otpLimiter,
+  validate(userSchemas.completeRegistration),
+  authController.completeRegistration
 );
 
 router.post('/login',

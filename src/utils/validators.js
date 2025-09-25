@@ -135,11 +135,19 @@ class Validators {
   static validateUserData(userData) {
     const errors = [];
 
-    // Email validation
-    if (!validationHelpers.isValidEmail(userData.email)) {
+    // Owner/Manager name validation
+    if (!userData.ownerManagerName || userData.ownerManagerName.trim().length < 2) {
       errors.push({
-        field: 'email',
-        message: 'Invalid email format',
+        field: 'ownerManagerName',
+        message: 'Owner/Manager name is required and must be at least 2 characters',
+      });
+    }
+
+    // Warehouse name validation
+    if (!userData.warehouseName || userData.warehouseName.trim().length < 2) {
+      errors.push({
+        field: 'warehouseName',
+        message: 'Warehouse name is required and must be at least 2 characters',
       });
     }
 
@@ -151,7 +159,15 @@ class Validators {
       });
     }
 
-    // Password validation
+    // Email validation (optional)
+    if (userData.email && !validationHelpers.isValidEmail(userData.email)) {
+      errors.push({
+        field: 'email',
+        message: 'Invalid email format',
+      });
+    }
+
+    // Password validation (only if provided)
     if (userData.password) {
       const passwordValidation = validationHelpers.validatePasswordStrength(userData.password);
       if (!passwordValidation.isValid) {
@@ -163,11 +179,106 @@ class Validators {
       }
     }
 
-    // Warehouse capacity validation
+    // Warehouse capacity validation (optional)
     if (userData.warehouseCapacity && userData.warehouseCapacity < 1) {
       errors.push({
         field: 'warehouseCapacity',
         message: 'Warehouse capacity must be at least 1',
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  // Validate registration step 1 data
+  static validateRegistrationData(userData) {
+    const errors = [];
+
+    // Owner/Manager name validation
+    if (!userData.ownerManagerName || userData.ownerManagerName.trim().length < 2) {
+      errors.push({
+        field: 'ownerManagerName',
+        message: 'Owner/Manager name is required and must be at least 2 characters',
+      });
+    }
+
+    // Warehouse name validation
+    if (!userData.warehouseName || userData.warehouseName.trim().length < 2) {
+      errors.push({
+        field: 'warehouseName',
+        message: 'Warehouse name is required and must be at least 2 characters',
+      });
+    }
+
+    // Phone validation
+    if (!validationHelpers.isValidPhone(userData.phone)) {
+      errors.push({
+        field: 'phone',
+        message: 'Invalid phone number format',
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  // Validate complete registration data (Step 3: Password creation only)
+  static validateCompleteRegistrationData(userData) {
+    const errors = [];
+
+    // Phone validation
+    if (!validationHelpers.isValidPhone(userData.phone)) {
+      errors.push({
+        field: 'phone',
+        message: 'Invalid phone number format',
+      });
+    }
+
+    // Password validation (required for complete registration)
+    if (!userData.password) {
+      errors.push({
+        field: 'password',
+        message: 'Password is required',
+      });
+    } else {
+      const passwordValidation = validationHelpers.validatePasswordStrength(userData.password);
+      if (!passwordValidation.isValid) {
+        errors.push({
+          field: 'password',
+          message: 'Password must be at least 8 characters with uppercase, lowercase, and numbers',
+          details: passwordValidation.requirements,
+        });
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  // Validate OTP verification data (Step 2: OTP verification only)
+  static validateOtpVerificationData(userData) {
+    const errors = [];
+
+    // Phone validation
+    if (!validationHelpers.isValidPhone(userData.phone)) {
+      errors.push({
+        field: 'phone',
+        message: 'Invalid phone number format',
+      });
+    }
+
+    // OTP validation (4 digits for dummy OTP)
+    if (!userData.otp || !/^\d{4}$/.test(userData.otp)) {
+      errors.push({
+        field: 'otp',
+        message: 'OTP must be a 4-digit number',
       });
     }
 

@@ -107,31 +107,28 @@ const commonSchemas = {
 
 // User validation schemas
 const userSchemas = {
+  // Step 1: Initial registration (basic info only)
   register: Joi.object({
-    firstName: Joi.string().trim().min(2).max(50).required(),
-    lastName: Joi.string().trim().min(2).max(50).required(),
-    email: commonSchemas.email.required(),
+    ownerManagerName: Joi.string().trim().min(2).max(100).required(),
+    warehouseName: Joi.string().trim().min(2).max(100).required(),
+    phone: commonSchemas.phone.required(),
+  }),
+
+  // Step 2: Verify OTP only
+  verifyOtp: Joi.object({
+    phone: commonSchemas.phone.required(),
+    otp: Joi.string().length(4).pattern(/^\d+$/).required(), // Changed to 4 digits for dummy OTP
+  }),
+
+  // Step 3: Complete registration (password creation only)
+  completeRegistration: Joi.object({
     phone: commonSchemas.phone.required(),
     password: commonSchemas.password.required(),
-    warehouseName: Joi.string().trim().min(2).max(100).required(),
-    warehouseAddress: Joi.object({
-      street: Joi.string().trim().required(),
-      city: Joi.string().trim().required(),
-      state: Joi.string().trim().required(),
-      zipCode: Joi.string().trim().pattern(/^\d{5,6}$/).required(),
-      country: Joi.string().trim().default('India'),
-    }).required(),
-    warehouseCapacity: Joi.number().integer().min(1).required(),
   }),
 
   login: Joi.object({
     phone: commonSchemas.phone.required(),
     password: Joi.string().required(),
-  }),
-
-  verifyOtp: Joi.object({
-    phone: commonSchemas.phone.required(),
-    otp: Joi.string().length(6).pattern(/^\d+$/).required(),
   }),
 
   forgotPassword: Joi.object({
@@ -145,8 +142,7 @@ const userSchemas = {
   }),
 
   updateProfile: Joi.object({
-    firstName: Joi.string().trim().min(2).max(50),
-    lastName: Joi.string().trim().min(2).max(50),
+    ownerManagerName: Joi.string().trim().min(2).max(100),
     email: commonSchemas.email,
     warehouseName: Joi.string().trim().min(2).max(100),
     warehouseAddress: Joi.object({

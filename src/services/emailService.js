@@ -9,34 +9,11 @@ class EmailService {
     this.initializeTransporter();
   }
 
-  // Initialize email transporter
+  // Initialize email transporter (disabled for registration flow without email)
   async initializeTransporter() {
-    try {
-      // Configure based on email service provider
-      const emailConfig = {
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      };
-
-      // Create transporter
-      this.transporter = nodemailer.createTransporter(emailConfig);
-
-      // Verify connection configuration
-      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-        await this.transporter.verify();
-        console.log('Email service initialized successfully');
-      } else {
-        console.warn('Email credentials not found. Email functionality will be disabled.');
-      }
-    } catch (error) {
-      console.error('Email service initialization failed:', error.message);
-      this.transporter = null;
-    }
+    // Skip email initialization since we're not using email in registration
+    console.log('Email service disabled - not needed for current registration flow');
+    this.transporter = null;
   }
 
   // Check if email service is available
@@ -435,8 +412,8 @@ class EmailService {
   async sendReminderEmail(to, reminderType, data, userData = {}) {
     try {
       let subject = '';
-      let template = 'reminder';
-      let templateData = { ...userData, ...data };
+      const template = 'reminder';
+      const templateData = { ...userData, ...data };
 
       switch (reminderType) {
         case 'payment_due':

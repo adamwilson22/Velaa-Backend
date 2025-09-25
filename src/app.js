@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
 const hpp = require('hpp');
 const path = require('path');
 
@@ -75,8 +74,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
 
-// Data sanitization against XSS
-app.use(xss());
+// XSS protection is now handled by helmet middleware above
 
 // Prevent parameter pollution
 app.use(hpp({

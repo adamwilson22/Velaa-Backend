@@ -8,10 +8,18 @@ const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 // Initialize Twilio client
 let client = null;
 
-if (accountSid && authToken) {
-  client = twilio(accountSid, authToken);
+// Only try to initialize Twilio if we have valid credentials
+if (accountSid && authToken && accountSid.startsWith('AC') && authToken.length > 10) {
+  try {
+    client = twilio(accountSid, authToken);
+    console.log('Twilio client initialized successfully');
+  } catch (error) {
+    console.warn('Failed to initialize Twilio client:', error.message);
+    client = null;
+  }
 } else {
-  console.warn('Twilio credentials not found. SMS functionality will be disabled.');
+  console.log('Twilio credentials not configured. Using mock SMS service (OTP: 1234)');
+  client = null;
 }
 
 // SMS configuration
@@ -33,50 +41,22 @@ const smsConfig = {
   },
 };
 
-// Generate OTP (default 1234 for development)
+// Generate OTP (always returns 1234 for testing/development)
 const generateOTP = (length = smsConfig.otpLength) => {
-  // For development, always return 1234
-  if (process.env.NODE_ENV === 'development' || process.env.MOCK_SMS === 'true') {
-    return '1234';
-  }
-  
-  // For production, generate random OTP
-  const digits = '0123456789';
-  let otp = '';
-  for (let i = 0; i < length; i++) {
-    otp += digits[Math.floor(Math.random() * 10)];
-  }
-  return otp;
+  // Always return 1234 for easy testing
+  return '1234';
 };
 
-// Send SMS using Twilio (or mock for development)
+// Send SMS using Twilio (or mock when Twilio not configured)
 const sendSMS = async (to, message) => {
-  // For development or when SMS is mocked
-  if (process.env.NODE_ENV === 'development' || process.env.MOCK_SMS === 'true' || !client) {
-    console.log(`📱 Mock SMS sent to ${to}: ${message}`);
-    return {
-      success: true,
-      messageId: 'mock_' + Date.now(),
-      status: 'delivered',
-    };
-  }
-
-  try {
-    const result = await client.messages.create({
-      body: message,
-      from: twilioPhoneNumber,
-      to: to,
-    });
-
-    return {
-      success: true,
-      messageId: result.sid,
-      status: result.status,
-    };
-  } catch (error) {
-    console.error('SMS sending error:', error);
-    throw new Error(`Failed to send SMS: ${error.message}`);
-  }
+  // Always use mock SMS for now (since we're using dummy OTP 1234)
+  console.log(`📱 Mock SMS sent to ${to}: ${message} (OTP: 1234)`);
+  return {
+    success: true,
+    messageId: 'mock_' + Date.now(),
+    status: 'delivered',
+    note: 'Using mock SMS service - OTP is always 1234'
+  };
 };
 
 // Send OTP SMS

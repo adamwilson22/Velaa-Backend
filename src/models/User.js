@@ -3,26 +3,13 @@ const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   // Personal Information
-  firstName: {
+  ownerManagerName: {
     type: String,
-    required: [true, 'First name is required'],
+    required: [true, 'Owner/Manager name is required'],
     trim: true,
-    maxlength: [50, 'First name cannot exceed 50 characters'],
+    maxlength: [100, 'Owner/Manager name cannot exceed 100 characters'],
   },
-  lastName: {
-    type: String,
-    required: [true, 'Last name is required'],
-    trim: true,
-    maxlength: [50, 'Last name cannot exceed 50 characters'],
-  },
-  email: {
-    type: String,
-    required: [true, 'Email is required'],
-    unique: true,
-    lowercase: true,
-    trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
-  },
+  // Email field removed - not needed for current registration flow
   phone: {
     type: String,
     required: [true, 'Phone number is required'],
@@ -32,7 +19,9 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function() {
+      return this.status === 'active';
+    },
     minlength: [6, 'Password must be at least 6 characters'],
     select: false, // Don't include password in queries by default
   },
@@ -45,24 +34,32 @@ const userSchema = new mongoose.Schema({
     maxlength: [100, 'Warehouse name cannot exceed 100 characters'],
   },
   warehouseAddress: {
-    street: { type: String, required: true, trim: true },
-    city: { type: String, required: true, trim: true },
-    state: { type: String, required: true, trim: true },
-    zipCode: { type: String, required: true, trim: true },
-    country: { type: String, required: true, trim: true, default: 'India' },
+    street: { type: String, trim: true },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    zipCode: { type: String, trim: true },
+    country: { type: String, trim: true, default: 'India' },
   },
   warehouseCapacity: {
     type: Number,
-    required: [true, 'Warehouse capacity is required'],
     min: [1, 'Warehouse capacity must be at least 1'],
   },
 
   // Account Status
+  status: {
+    type: String,
+    enum: ['pending', 'otp-verified', 'active', 'inactive'],
+    default: 'pending',
+  },
   isEmailVerified: {
     type: Boolean,
     default: false,
   },
   isPhoneVerified: {
+    type: Boolean,
+    default: false,
+  },
+  isOtpVerified: {
     type: Boolean,
     default: false,
   },
@@ -119,9 +116,9 @@ const userSchema = new mongoose.Schema({
   toObject: { virtuals: true },
 });
 
-// Virtual for full name
+// Virtual for full name (use ownerManagerName as full name)
 userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
+  return this.ownerManagerName;
 });
 
 // Virtual for account lock status
@@ -130,7 +127,6 @@ userSchema.virtual('isLocked').get(function() {
 });
 
 // Indexes
-userSchema.index({ email: 1 });
 userSchema.index({ phone: 1 });
 userSchema.index({ warehouseName: 1 });
 userSchema.index({ createdAt: -1 });
@@ -159,9 +155,9 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   }
 };
 
-// Method to generate OTP
+// Method to generate OTP (always returns 1234 for testing)
 userSchema.methods.generateOTP = function(type = 'verification') {
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = '1234'; // Always use 1234 for easy testing
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   this.otp = {

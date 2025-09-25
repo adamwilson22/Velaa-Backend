@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Velaa Vehicle Management API",
-    "description": "Complete API collection for Velaa Vehicle Management System including Authentication and Vehicle Management modules",
-    "version": "1.0.0",
+    "name": "Velaa Vehicle Management API - Updated",
+    "description": "Complete API collection for Velaa Vehicle Management System with New Simplified Registration Flow",
+    "version": "2.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -18,45 +18,74 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000/api",
-      "type": "string"
+      "value": "http://localhost:5001/api",
+      "type": "string",
+      "description": "Base URL for the API (updated to port 5001)"
     },
     {
       "key": "authToken",
       "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "Authentication JWT token"
     },
     {
       "key": "userId",
       "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "User ID for authenticated requests"
     },
     {
-      "key": "vehicleId",
-      "value": "",
-      "type": "string"
+      "key": "testPhone",
+      "value": "+1234567890",
+      "type": "string",
+      "description": "Test phone number for registration"
+    },
+    {
+      "key": "testOTP",
+      "value": "1234",
+      "type": "string",
+      "description": "Development OTP (always 1234)"
     }
   ],
   "item": [
     {
       "name": "🔐 Authentication",
+      "description": "All authentication related endpoints",
       "item": [
         {
-          "name": "📝 Public Routes",
+          "name": "📝 Registration Flow (New)",
+          "description": "New simplified 3-step registration process: Register → Verify OTP → Create Password",
           "item": [
             {
-              "name": "Register User",
+              "name": "Step 1: Register User",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "if (pm.response.code === 201) {",
+                      "// Test for successful registration",
+                      "pm.test('Status code is 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test('Response has required fields', function () {",
                       "    const response = pm.response.json();",
-                      "    if (response.data && response.data.user) {",
-                      "        pm.collectionVariables.set('userId', response.data.user.id);",
+                      "    pm.expect(response).to.have.property('success', true);",
+                      "    pm.expect(response.data).to.have.property('userId');",
+                      "    pm.expect(response.data).to.have.property('phone');",
+                      "    pm.expect(response.data).to.have.property('otpSent', true);",
+                      "    pm.expect(response.data).to.have.property('nextStep', 'verify-otp');",
+                      "    ",
+                      "    // Store userId for next requests",
+                      "    if (response.data.userId) {",
+                      "        pm.collectionVariables.set('userId', response.data.userId);",
                       "    }",
-                      "}"
+                      "});",
+                      "",
+                      "pm.test('Phone number matches', function () {",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.data.phone).to.eql(pm.collectionVariables.get('testPhone'));",
+                      "});"
                     ],
                     "type": "text/javascript"
                   }
@@ -72,18 +101,48 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+919876543210\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"User\",\n  \"warehouseName\": \"Main Warehouse\",\n  \"warehouseAddress\": {\n    \"street\": \"123 Main Street\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"pincode\": \"400001\",\n    \"country\": \"India\"\n  }\n}"
+                  "raw": "{\n  \"ownerManagerName\": \"John Doe\",\n  \"warehouseName\": \"Main Warehouse\",\n  \"phone\": \"{{testPhone}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/register",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "register"]
                 },
-                "description": "Register a new user with warehouse details"
+                "description": "Step 1: Register with basic info only (ownerManagerName, warehouseName, phone)"
               }
             },
             {
-              "name": "Verify OTP",
+              "name": "Step 2: Verify OTP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// Test for successful OTP verification",
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('OTP verified successfully', function () {",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response).to.have.property('success', true);",
+                      "    pm.expect(response.data).to.have.property('user');",
+                      "    pm.expect(response.data.user).to.have.property('status', 'otp-verified');",
+                      "    pm.expect(response.data.user).to.have.property('isOtpVerified', true);",
+                      "    pm.expect(response.data).to.have.property('nextStep', 'create-password');",
+                      "});",
+                      "",
+                      "pm.test('User has correct verification status', function () {",
+                      "    const response = pm.response.json();",
+                      "    const user = response.data.user;",
+                      "    pm.expect(user).to.have.property('isPhoneVerified', true);",
+                      "    pm.expect(user).to.have.property('isOtpVerified', true);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "POST",
                 "header": [
@@ -94,16 +153,80 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"+919876543210\",\n  \"otp\": \"1234\",\n  \"type\": \"registration\"\n}"
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"otp\": \"{{testOTP}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/verify-otp",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "verify-otp"]
                 },
-                "description": "Verify OTP for registration (default: 1234)"
+                "description": "Step 2: Verify OTP sent to phone number (uses dummy OTP: 1234)"
               }
             },
+            {
+              "name": "Step 3: Complete Registration",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// Test for successful registration completion",
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Registration completed successfully', function () {",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response).to.have.property('success', true);",
+                      "    pm.expect(response.data).to.have.property('token');",
+                      "    pm.expect(response.data).to.have.property('user');",
+                      "    pm.expect(response.data.user).to.have.property('status', 'active');",
+                      "    pm.expect(response.data.user).to.have.property('isPhoneVerified', true);",
+                      "    pm.expect(response.data.user).to.have.property('isOtpVerified', true);",
+                      "    ",
+                      "    // Store auth token for authenticated requests",
+                      "    if (response.data.token) {",
+                      "        pm.collectionVariables.set('authToken', response.data.token);",
+                      "    }",
+                      "});",
+                      "",
+                      "pm.test('User has correct fields', function () {",
+                      "    const response = pm.response.json();",
+                      "    const user = response.data.user;",
+                      "    pm.expect(user).to.have.property('ownerManagerName', 'John Doe');",
+                      "    pm.expect(user).to.have.property('warehouseName', 'Main Warehouse');",
+                      "    pm.expect(user).to.have.property('phone', pm.collectionVariables.get('testPhone'));",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"password\": \"SecurePass123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/complete-registration",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "complete-registration"]
+                },
+                "description": "Step 3: Create password to complete registration (requires OTP to be verified first)"
+              }
+            }
+          ]
+        },
+        {
+          "name": "📝 Login & Authentication",
+          "item": [
             {
               "name": "Login User",
               "event": [
@@ -111,13 +234,26 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "if (pm.response.code === 200) {",
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Login successful', function () {",
                       "    const response = pm.response.json();",
-                      "    if (response.data && response.data.token) {",
+                      "    pm.expect(response).to.have.property('success', true);",
+                      "    pm.expect(response.data).to.have.property('token');",
+                      "    pm.expect(response.data).to.have.property('user');",
+                      "    ",
+                      "    // Store auth token",
+                      "    if (response.data.token) {",
                       "        pm.collectionVariables.set('authToken', response.data.token);",
+                      "    }",
+                      "    ",
+                      "    // Store user ID",
+                      "    if (response.data.user && response.data.user.id) {",
                       "        pm.collectionVariables.set('userId', response.data.user.id);",
                       "    }",
-                      "}"
+                      "});"
                     ],
                     "type": "text/javascript"
                   }
@@ -133,14 +269,69 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"+919876543210\",\n  \"password\": \"SecurePass123!\"\n}"
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"password\": \"SecurePass123!\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/login",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "login"]
                 },
-                "description": "Login user and get JWT token"
+                "description": "Login with phone and password"
+              }
+            },
+            {
+              "name": "Logout User",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "logout"]
+                },
+                "description": "Logout current user"
+              }
+            }
+          ]
+        },
+        {
+          "name": "📝 Legacy & Other Auth",
+          "item": [
+            {
+              "name": "Verify OTP (Legacy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"otp\": \"{{testOTP}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/verify-otp",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "verify-otp"]
+                },
+                "description": "Legacy OTP verification endpoint"
               }
             },
             {
@@ -155,14 +346,14 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"+919876543210\"\n}"
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/forgot-password",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "forgot-password"]
                 },
-                "description": "Initiate password recovery process"
+                "description": "Initiate password recovery"
               }
             },
             {
@@ -177,14 +368,14 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"+919876543210\",\n  \"otp\": \"1234\"\n}"
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"otp\": \"{{testOTP}}\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/verify-recovery-otp",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "verify-recovery-otp"]
                 },
-                "description": "Verify OTP for password recovery"
+                "description": "Verify recovery OTP"
               }
             },
             {
@@ -199,14 +390,14 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"phone\": \"+919876543210\",\n  \"otp\": \"1234\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
+                  "raw": "{\n  \"phone\": \"{{testPhone}}\",\n  \"otp\": \"{{testOTP}}\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/reset-password",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "reset-password"]
                 },
-                "description": "Reset password with OTP verification"
+                "description": "Reset password with OTP"
               }
             }
           ]
@@ -217,13 +408,18 @@
             {
               "name": "Get Profile",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/auth/profile",
                   "host": ["{{baseUrl}}"],
@@ -235,20 +431,26 @@
             {
               "name": "Update Profile",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "PUT",
                 "header": [
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"email\": \"john.updated@example.com\",\n  \"warehouseName\": \"Updated Warehouse\",\n  \"warehouseAddress\": {\n    \"street\": \"456 Updated Street\",\n    \"city\": \"Delhi\",\n    \"state\": \"Delhi\",\n    \"pincode\": \"110001\",\n    \"country\": \"India\"\n  }\n}"
+                  "raw": "{\n  \"ownerManagerName\": \"John Doe Updated\",\n  \"email\": \"john.updated@example.com\",\n  \"warehouseName\": \"Updated Warehouse\",\n  \"warehouseAddress\": {\n    \"street\": \"456 Updated Street\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"zipCode\": \"400002\",\n    \"country\": \"India\"\n  },\n  \"warehouseCapacity\": 1000\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/profile",
@@ -261,20 +463,26 @@
             {
               "name": "Change Password",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "PUT",
                 "header": [
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"currentPassword\": \"SecurePass123!\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
+                  "raw": "{\n  \"currentPassword\": \"SecurePass123!\",\n  \"newPassword\": \"NewSecurePass123!\",\n  \"confirmPassword\": \"NewSecurePass123!\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/auth/change-password",
@@ -283,201 +491,6 @@
                 },
                 "description": "Change user password"
               }
-            },
-            {
-              "name": "Send Phone Verification OTP",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"phone\": \"+919876543210\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/auth/send-phone-verification",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "send-phone-verification"]
-                },
-                "description": "Send OTP for phone number verification"
-              }
-            },
-            {
-              "name": "Verify Phone Number",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"phone\": \"+919876543210\",\n  \"otp\": \"1234\",\n  \"type\": \"phone_verification\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/auth/verify-phone",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "verify-phone"]
-                },
-                "description": "Verify phone number with OTP"
-              }
-            },
-            {
-              "name": "Logout",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/auth/logout",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "logout"]
-                },
-                "description": "Logout current user"
-              }
-            }
-          ]
-        },
-        {
-          "name": "👨‍💼 Admin Management",
-          "item": [
-            {
-              "name": "Get All Users",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/auth/users?page=1&limit=10&search=&role=&status=",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "users"],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "1"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "10"
-                    },
-                    {
-                      "key": "search",
-                      "value": ""
-                    },
-                    {
-                      "key": "role",
-                      "value": ""
-                    },
-                    {
-                      "key": "status",
-                      "value": ""
-                    }
-                  ]
-                },
-                "description": "Get all users with pagination and filtering (Admin only)"
-              }
-            },
-            {
-              "name": "Get User by ID",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/auth/users/{{userId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "users", "{{userId}}"]
-                },
-                "description": "Get specific user by ID (Admin only)"
-              }
-            },
-            {
-              "name": "Update User",
-              "request": {
-                "method": "PUT",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"User\",\n  \"email\": \"updated.user@example.com\",\n  \"role\": \"Manager\",\n  \"isActive\": true,\n  \"warehouseName\": \"Updated Warehouse\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/auth/users/{{userId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "users", "{{userId}}"]
-                },
-                "description": "Update user information (Admin only)"
-              }
-            },
-            {
-              "name": "Delete User",
-              "request": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/auth/users/{{userId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "users", "{{userId}}"]
-                },
-                "description": "Delete user (Admin only)"
-              }
-            },
-            {
-              "name": "Get User Statistics",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/auth/stats",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["auth", "stats"]
-                },
-                "description": "Get user statistics for admin dashboard"
-              }
             }
           ]
         }
@@ -485,6 +498,7 @@
     },
     {
       "name": "🚗 Vehicle Management",
+      "description": "All vehicle related endpoints",
       "item": [
         {
           "name": "📋 Vehicle CRUD",
@@ -492,15 +506,20 @@
             {
               "name": "Get All Vehicles",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
+                "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/vehicles?page=1&limit=10&sort=-createdAt&search=&brand=&model=&status=&condition=&fuelType=&transmission=&yearFrom=&yearTo=&priceFrom=&priceTo=",
+                  "raw": "{{baseUrl}}/vehicles?page=1&limit=10",
                   "host": ["{{baseUrl}}"],
                   "path": ["vehicles"],
                   "query": [
@@ -511,58 +530,10 @@
                     {
                       "key": "limit",
                       "value": "10"
-                    },
-                    {
-                      "key": "sort",
-                      "value": "-createdAt"
-                    },
-                    {
-                      "key": "search",
-                      "value": ""
-                    },
-                    {
-                      "key": "brand",
-                      "value": ""
-                    },
-                    {
-                      "key": "model",
-                      "value": ""
-                    },
-                    {
-                      "key": "status",
-                      "value": ""
-                    },
-                    {
-                      "key": "condition",
-                      "value": ""
-                    },
-                    {
-                      "key": "fuelType",
-                      "value": ""
-                    },
-                    {
-                      "key": "transmission",
-                      "value": ""
-                    },
-                    {
-                      "key": "yearFrom",
-                      "value": ""
-                    },
-                    {
-                      "key": "yearTo",
-                      "value": ""
-                    },
-                    {
-                      "key": "priceFrom",
-                      "value": ""
-                    },
-                    {
-                      "key": "priceTo",
-                      "value": ""
                     }
                   ]
                 },
-                "description": "Get all vehicles with advanced filtering and pagination"
+                "description": "Get all vehicles with pagination"
               }
             },
             {
@@ -574,7 +545,7 @@
                     "exec": [
                       "if (pm.response.code === 201) {",
                       "    const response = pm.response.json();",
-                      "    if (response.data && response.data.vehicle) {",
+                      "    if (response.data && response.data.vehicle && response.data.vehicle._id) {",
                       "        pm.collectionVariables.set('vehicleId', response.data.vehicle._id);",
                       "    }",
                       "}"
@@ -584,64 +555,81 @@
                 }
               ],
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "POST",
                 "header": [
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chassisNumber\": \"MAHN1234567890123\",\n  \"engineNumber\": \"ENG123456789\",\n  \"registrationNumber\": \"MH01AB1234\",\n  \"brand\": \"Maruti Suzuki\",\n  \"model\": \"Swift\",\n  \"variant\": \"VXI\",\n  \"year\": 2023,\n  \"color\": \"Pearl White\",\n  \"fuelType\": \"Petrol\",\n  \"transmission\": \"Manual\",\n  \"engineCapacity\": 1197,\n  \"mileage\": 23.76,\n  \"seatingCapacity\": 5,\n  \"owner\": \"{{userId}}\",\n  \"ownershipType\": \"First Owner\",\n  \"condition\": \"Excellent\",\n  \"purchasePrice\": 650000,\n  \"sellingPrice\": 580000,\n  \"marketValue\": 600000,\n  \"purchaseDate\": \"2023-01-15\",\n  \"registrationDate\": \"2023-01-20\",\n  \"insuranceExpiryDate\": \"2024-01-20\",\n  \"pucExpiryDate\": \"2024-07-20\",\n  \"location\": {\n    \"warehouse\": \"Main Warehouse\",\n    \"section\": \"A1\",\n    \"row\": \"1\",\n    \"position\": \"5\"\n  },\n  \"features\": [\"ABS\", \"Airbags\", \"Power Steering\", \"AC\", \"Music System\"],\n  \"tags\": [\"popular\", \"fuel-efficient\", \"compact\"],\n  \"notes\": \"Well maintained vehicle with complete service history\"\n}"
+                  "raw": "{\n  \"chassisNumber\": \"1HGBH41JXMN109186\",\n  \"engineNumber\": \"ENG123456789\",\n  \"registrationNumber\": \"MH01AB1234\",\n  \"brand\": \"Honda\",\n  \"model\": \"Civic\",\n  \"variant\": \"LXi\",\n  \"year\": 2023,\n  \"color\": \"White\",\n  \"fuelType\": \"Petrol\",\n  \"transmission\": \"Manual\",\n  \"mileage\": 15.5,\n  \"purchaseDate\": \"2023-01-15\",\n  \"purchasePrice\": 800000,\n  \"condition\": \"Excellent\",\n  \"status\": \"Available\",\n  \"location\": \"Main Warehouse\",\n  \"features\": [\"ABS\", \"Airbags\", \"Power Steering\"],\n  \"notes\": \"Brand new vehicle in excellent condition\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/vehicles",
                   "host": ["{{baseUrl}}"],
                   "path": ["vehicles"]
                 },
-                "description": "Create a new vehicle with complete details"
+                "description": "Create a new vehicle"
               }
             },
             {
               "name": "Get Vehicle by ID",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
                   "host": ["{{baseUrl}}"],
                   "path": ["vehicles", "{{vehicleId}}"]
                 },
-                "description": "Get specific vehicle by ID with complete details"
+                "description": "Get vehicle by ID"
               }
             },
             {
               "name": "Update Vehicle",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "PUT",
                 "header": [
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"brand\": \"Maruti Suzuki\",\n  \"model\": \"Swift Dzire\",\n  \"variant\": \"VXI Updated\",\n  \"color\": \"Pearl White Updated\",\n  \"sellingPrice\": 570000,\n  \"marketValue\": 590000,\n  \"condition\": \"Very Good\",\n  \"features\": [\"ABS\", \"Airbags\", \"Power Steering\", \"AC\", \"Music System\", \"Bluetooth\"],\n  \"notes\": \"Updated vehicle information with additional features\"\n}"
+                  "raw": "{\n  \"status\": \"Sold\",\n  \"notes\": \"Vehicle sold to customer\",\n  \"condition\": \"Good\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
@@ -654,19 +642,24 @@
             {
               "name": "Delete Vehicle",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "DELETE",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
                   "host": ["{{baseUrl}}"],
                   "path": ["vehicles", "{{vehicleId}}"]
                 },
-                "description": "Delete vehicle (Manager/Admin only)"
+                "description": "Delete vehicle"
               }
             }
           ]
@@ -677,25 +670,30 @@
             {
               "name": "Search Vehicles",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
+                "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/vehicles/search?q=Swift&brand=Maruti&minPrice=500000&maxPrice=700000&year=2023&fuelType=Petrol&transmission=Manual&condition=Excellent&status=Available",
+                  "raw": "{{baseUrl}}/vehicles/search?brand=Honda&status=Available&minPrice=500000&maxPrice=1000000",
                   "host": ["{{baseUrl}}"],
                   "path": ["vehicles", "search"],
                   "query": [
                     {
-                      "key": "q",
-                      "value": "Swift"
+                      "key": "brand",
+                      "value": "Honda"
                     },
                     {
-                      "key": "brand",
-                      "value": "Maruti"
+                      "key": "status",
+                      "value": "Available"
                     },
                     {
                       "key": "minPrice",
@@ -703,275 +701,34 @@
                     },
                     {
                       "key": "maxPrice",
-                      "value": "700000"
-                    },
-                    {
-                      "key": "year",
-                      "value": "2023"
-                    },
-                    {
-                      "key": "fuelType",
-                      "value": "Petrol"
-                    },
-                    {
-                      "key": "transmission",
-                      "value": "Manual"
-                    },
-                    {
-                      "key": "condition",
-                      "value": "Excellent"
-                    },
-                    {
-                      "key": "status",
-                      "value": "Available"
+                      "value": "1000000"
                     }
                   ]
                 },
-                "description": "Advanced vehicle search with multiple filters"
-              }
-            }
-          ]
-        },
-        {
-          "name": "📊 Status Management",
-          "item": [
-            {
-              "name": "Update Vehicle Status",
-              "request": {
-                "method": "PUT",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"status\": \"Under Inspection\",\n  \"reason\": \"Routine quality check before sale\",\n  \"notes\": \"Scheduled for comprehensive inspection\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/status",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "status"]
-                },
-                "description": "Update vehicle status with business rules validation"
-              }
-            }
-          ]
-        },
-        {
-          "name": "📁 File Management",
-          "item": [
-            {
-              "name": "Upload Vehicle Images",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "formdata",
-                  "formdata": [
-                    {
-                      "key": "images",
-                      "type": "file",
-                      "src": []
-                    }
-                  ]
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/images",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "images"]
-                },
-                "description": "Upload vehicle images (multiple files supported)"
+                "description": "Search vehicles with filters"
               }
             },
-            {
-              "name": "Upload Vehicle Documents",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "formdata",
-                  "formdata": [
-                    {
-                      "key": "documents",
-                      "type": "file",
-                      "src": []
-                    }
-                  ]
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/documents",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "documents"]
-                },
-                "description": "Upload vehicle documents (RC, Insurance, etc.)"
-              }
-            },
-            {
-              "name": "Delete Vehicle Image",
-              "request": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/images/IMAGE_ID_HERE",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "images", "IMAGE_ID_HERE"]
-                },
-                "description": "Delete specific vehicle image"
-              }
-            },
-            {
-              "name": "Delete Vehicle Document",
-              "request": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/documents/DOCUMENT_ID_HERE",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "documents", "DOCUMENT_ID_HERE"]
-                },
-                "description": "Delete specific vehicle document"
-              }
-            }
-          ]
-        },
-        {
-          "name": "🔧 Maintenance & Defects",
-          "item": [
-            {
-              "name": "Get Maintenance History",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/maintenance",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "maintenance"]
-                },
-                "description": "Get complete maintenance history for vehicle"
-              }
-            },
-            {
-              "name": "Add Maintenance Record",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"type\": \"Service\",\n  \"description\": \"Regular service and oil change\",\n  \"cost\": 3500,\n  \"serviceProvider\": \"Authorized Service Center\",\n  \"serviceDate\": \"2023-06-15\",\n  \"nextServiceDate\": \"2023-12-15\",\n  \"partsReplaced\": [\"Engine Oil\", \"Oil Filter\", \"Air Filter\"],\n  \"notes\": \"All systems checked and working properly\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/maintenance",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "maintenance"]
-                },
-                "description": "Add new maintenance record"
-              }
-            },
-            {
-              "name": "Get Vehicle Defects",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/defects",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "defects"]
-                },
-                "description": "Get all defects for vehicle"
-              }
-            },
-            {
-              "name": "Add Vehicle Defect",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"category\": \"Exterior\",\n  \"severity\": \"Minor\",\n  \"description\": \"Small scratch on rear bumper\",\n  \"location\": \"Rear bumper - left side\",\n  \"estimatedCost\": 2500,\n  \"priority\": \"Low\",\n  \"notes\": \"Cosmetic issue, does not affect functionality\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/vehicles/{{vehicleId}}/defects",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["vehicles", "{{vehicleId}}", "defects"]
-                },
-                "description": "Add new defect record"
-              }
-            }
-          ]
-        },
-        {
-          "name": "📈 Analytics & Statistics",
-          "item": [
             {
               "name": "Get Vehicle Statistics",
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{authToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{authToken}}"
-                  }
-                ],
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/vehicles/stats",
                   "host": ["{{baseUrl}}"],
                   "path": ["vehicles", "stats"]
                 },
-                "description": "Get comprehensive vehicle statistics and analytics"
+                "description": "Get vehicle statistics"
               }
             }
           ]
@@ -979,19 +736,159 @@
       ]
     },
     {
-      "name": "🏥 Health Check",
+      "name": "👥 Client Management",
+      "description": "All client related endpoints",
       "item": [
         {
-          "name": "API Health Check",
+          "name": "Get All Clients",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all clients with pagination"
+          }
+        },
+        {
+          "name": "Create Client",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"+919876543211\",\n  \"address\": {\n    \"street\": \"789 Client Street\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"zipCode\": \"400003\",\n    \"country\": \"India\"\n  },\n  \"type\": \"Individual\",\n  \"notes\": \"Premium client\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clients",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients"]
+            },
+            "description": "Create a new client"
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Billing Management",
+      "description": "All billing related endpoints",
+      "item": [
+        {
+          "name": "Get All Billing Records",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all billing records"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "description": "Dashboard and analytics endpoints",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "stats"]
+            },
+            "description": "Get dashboard statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 System",
+      "description": "System and utility endpoints",
+      "item": [
+        {
+          "name": "Health Check",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/health",
+              "raw": "{{baseUrl}}/../health",
               "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "path": ["..", "health"]
             },
-            "description": "Check API server health and status"
+            "description": "Check server health"
           }
         },
         {
@@ -1004,7 +901,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["docs"]
             },
-            "description": "Get API documentation and available endpoints"
+            "description": "Get API documentation"
           }
         }
       ]

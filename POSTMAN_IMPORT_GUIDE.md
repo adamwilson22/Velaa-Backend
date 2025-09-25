@@ -1,8 +1,8 @@
-# 📮 Postman Collection Import Guide
+# 📮 Postman Collection Import Guide - Updated v2.0.0
 
 ## 🚀 **Quick Start Guide**
 
-This guide will help you import and use the Velaa Vehicle Management API collection in Postman to test all Authentication and Vehicle Management endpoints.
+This guide will help you import and use the **updated** Velaa Vehicle Management API collection in Postman to test the new simplified registration flow and all other endpoints.
 
 ---
 
@@ -16,353 +16,290 @@ This guide will help you import and use the Velaa Vehicle Management API collect
 5. Click **"Import"** button
 6. ✅ Collection imported successfully!
 
-### **Method 2: Import from URL** (if hosted)
-1. **Open Postman** application
-2. Click **"Import"** button
-3. Select **"Link"** tab
-4. Paste the collection URL
-5. Click **"Continue"** → **"Import"**
+### **Collection Info:**
+- **Name**: Velaa Vehicle Management API - Updated
+- **Version**: 2.0.0
+- **New Features**: Simplified 2-step registration flow
+- **Base URL**: `http://localhost:5001/api` (Updated port)
 
 ---
 
-## ⚙️ **Step 2: Configure Environment Variables**
+## ⚙️ **Step 2: Pre-Configured Variables**
 
-### **Set Base URL:**
-1. Go to **Collections** → **"Velaa Vehicle Management API"**
-2. Click on **"Variables"** tab
-3. Set `baseUrl` value to: `http://localhost:3000/api`
-4. Click **"Save"**
+The collection comes with these **auto-configured variables**:
 
-### **Environment Variables Included:**
-- `baseUrl`: API base URL (default: http://localhost:3000/api)
-- `authToken`: JWT token (auto-populated after login)
-- `userId`: User ID (auto-populated after registration/login)
-- `vehicleId`: Vehicle ID (auto-populated after creating vehicle)
+| Variable | Default Value | Description |
+|----------|---------------|-------------|
+| `baseUrl` | `http://localhost:5001/api` | API base URL (updated port) |
+| `authToken` | *(auto-set)* | JWT token after login |
+| `userId` | *(auto-set)* | User ID after registration |
+| `testPhone` | `+1234567890` | Test phone number |
+| `testOTP` | `1234` | Development OTP |
 
----
-
-## 🔐 **Step 3: Authentication Setup**
-
-### **Important Notes:**
-- 🔑 **Default OTP**: `1234` (for all OTP verifications)
-- 🚀 **Development Mode**: SMS is mocked (check console logs)
-- 🔒 **JWT Token**: Auto-saved after successful login
-
-### **Authentication Flow:**
-1. **Register User** → Get user ID
-2. **Verify OTP** → Use OTP: `1234`
-3. **Login** → Get JWT token (auto-saved)
-4. **All other APIs** → Use saved token automatically
+**No manual configuration needed!** 🎉
 
 ---
 
-## 📋 **Step 4: Testing Workflow**
+## 🔄 **Step 3: Test the New Registration Flow**
 
-### **🔐 Authentication Testing Order:**
+### **🎯 New 2-Step Process:**
 
-#### **A. Public Routes (No Auth Required):**
-```
-1. Register User          → Creates new user
-2. Verify OTP            → Verifies with OTP: 1234
-3. Login User            → Gets JWT token
-4. Forgot Password       → Initiates recovery
-5. Verify Recovery OTP   → Verifies with OTP: 1234
-6. Reset Password        → Resets password
-```
+#### **Step 1: Register User** 
+📁 `🔐 Authentication` → `📝 Registration Flow (New)` → `Step 1: Register User`
 
-#### **B. Profile Management (Auth Required):**
-```
-7. Get Profile           → View user profile
-8. Update Profile        → Update user info
-9. Change Password       → Change password
-10. Send Phone Verification → Send OTP
-11. Verify Phone Number  → Verify with OTP: 1234
-12. Logout              → Logout user
-```
-
-#### **C. Admin Management (Admin Role Required):**
-```
-13. Get All Users        → List all users
-14. Get User by ID       → Get specific user
-15. Update User          → Update user (admin)
-16. Delete User          → Delete user (admin)
-17. Get User Statistics  → Admin dashboard stats
-```
-
-### **🚗 Vehicle Management Testing Order:**
-
-#### **A. Vehicle CRUD:**
-```
-1. Create Vehicle        → Creates new vehicle (saves ID)
-2. Get All Vehicles      → List with filters
-3. Get Vehicle by ID     → Get specific vehicle
-4. Update Vehicle        → Update vehicle info
-5. Delete Vehicle        → Delete vehicle (Manager+)
-```
-
-#### **B. Search & Filter:**
-```
-6. Search Vehicles       → Advanced search with filters
-```
-
-#### **C. Status Management:**
-```
-7. Update Vehicle Status → Change status with rules
-```
-
-#### **D. File Management:**
-```
-8. Upload Vehicle Images    → Upload images
-9. Upload Vehicle Documents → Upload documents
-10. Delete Vehicle Image    → Remove image
-11. Delete Vehicle Document → Remove document
-```
-
-#### **E. Maintenance & Defects:**
-```
-12. Get Maintenance History → View maintenance
-13. Add Maintenance Record  → Add maintenance
-14. Get Vehicle Defects     → View defects
-15. Add Vehicle Defect      → Add defect
-```
-
-#### **F. Analytics:**
-```
-16. Get Vehicle Statistics  → Dashboard analytics
-```
-
----
-
-## 🎯 **Step 5: Sample Test Data**
-
-### **User Registration Data:**
+**Pre-filled Data:**
 ```json
 {
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john.doe@example.com",
-  "phone": "+919876543210",
-  "password": "SecurePass123!",
-  "role": "User",
+  "ownerManagerName": "John Doe",
   "warehouseName": "Main Warehouse",
-  "warehouseAddress": {
-    "street": "123 Main Street",
-    "city": "Mumbai",
-    "state": "Maharashtra",
-    "pincode": "400001",
-    "country": "India"
-  }
+  "phone": "+1234567890"
 }
 ```
 
-### **Vehicle Creation Data:**
+**Expected Response:** ✅ Status 201, OTP sent, `nextStep: "complete-registration"`
+
+#### **Step 2: Complete Registration**
+📁 `Step 2: Complete Registration`
+
+**Pre-filled Data:**
 ```json
 {
-  "chassisNumber": "MAHN1234567890123",
-  "engineNumber": "ENG123456789",
-  "registrationNumber": "MH01AB1234",
-  "brand": "Maruti Suzuki",
-  "model": "Swift",
-  "variant": "VXI",
-  "year": 2023,
-  "color": "Pearl White",
-  "fuelType": "Petrol",
-  "transmission": "Manual",
-  "engineCapacity": 1197,
-  "mileage": 23.76,
-  "seatingCapacity": 5,
-  "owner": "{{userId}}",
-  "ownershipType": "First Owner",
-  "condition": "Excellent",
-  "purchasePrice": 650000,
-  "sellingPrice": 580000,
-  "marketValue": 600000,
-  "purchaseDate": "2023-01-15",
-  "registrationDate": "2023-01-20",
-  "insuranceExpiryDate": "2024-01-20",
-  "pucExpiryDate": "2024-07-20",
-  "location": {
-    "warehouse": "Main Warehouse",
-    "section": "A1",
-    "row": "1",
-    "position": "5"
-  },
-  "features": ["ABS", "Airbags", "Power Steering", "AC", "Music System"],
-  "tags": ["popular", "fuel-efficient", "compact"],
-  "notes": "Well maintained vehicle with complete service history"
+  "phone": "+1234567890",
+  "otp": "1234",
+  "password": "SecurePass123!"
 }
 ```
 
----
-
-## 🔧 **Step 6: Server Setup**
-
-### **Before Testing APIs:**
-
-1. **Start MongoDB:**
-   ```bash
-   # Windows
-   net start MongoDB
-   
-   # macOS/Linux
-   sudo systemctl start mongod
-   ```
-
-2. **Create .env file:**
-   ```bash
-   cp env.example .env
-   ```
-
-3. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
-
-4. **Start Server:**
-   ```bash
-   npm start
-   # or
-   npm run dev
-   ```
-
-5. **Verify Server:**
-   - Open: http://localhost:3000/api/health
-   - Should return: `{"success": true, "message": "API is running"}`
+**Expected Response:** ✅ Status 200, JWT token, user verified
 
 ---
 
-## 📊 **Step 7: Collection Features**
+## 📋 **Step 4: Collection Structure**
 
-### **🔄 Auto-Variables:**
-- **JWT Token**: Auto-saved after login
-- **User ID**: Auto-saved after registration
-- **Vehicle ID**: Auto-saved after vehicle creation
-
-### **📝 Pre-filled Data:**
-- **Sample requests**: Ready-to-use test data
-- **Query parameters**: Pre-configured filters
-- **Headers**: Auto-authentication setup
-
-### **🧪 Test Scripts:**
-- **Token extraction**: Auto-saves JWT tokens
-- **ID extraction**: Auto-saves resource IDs
-- **Response validation**: Basic response checks
-
----
-
-## 🚨 **Step 8: Troubleshooting**
-
-### **Common Issues:**
-
-#### **❌ "Unauthorized" Error:**
-- **Solution**: Login first to get JWT token
-- **Check**: Token is saved in collection variables
-
-#### **❌ "User not found" Error:**
-- **Solution**: Register user first
-- **Check**: Use correct phone number format (+91xxxxxxxxxx)
-
-#### **❌ "Invalid OTP" Error:**
-- **Solution**: Use default OTP: `1234`
-- **Check**: OTP type matches (registration/recovery/phone_verification)
-
-#### **❌ "Vehicle not found" Error:**
-- **Solution**: Create vehicle first
-- **Check**: Vehicle ID is saved in collection variables
-
-#### **❌ "Connection refused" Error:**
-- **Solution**: Start the backend server
-- **Check**: Server running on http://localhost:3000
-
-#### **❌ "Validation failed" Error:**
-- **Solution**: Check request body format
-- **Check**: Required fields are provided
-
----
-
-## 📈 **Step 9: Advanced Usage**
-
-### **🔍 Search Examples:**
+### **🔐 Authentication** (Updated)
 ```
-# Search by text
-GET /vehicles/search?q=Swift
+📝 Registration Flow (New)
+  ├── Step 1: Register User
+  └── Step 2: Complete Registration
 
-# Filter by brand and price
-GET /vehicles/search?brand=Maruti&minPrice=500000&maxPrice=700000
+📝 Login & Authentication  
+  ├── Login User
+  └── Logout User
 
-# Multiple filters
-GET /vehicles/search?fuelType=Petrol&transmission=Manual&year=2023
+📝 Legacy & Other Auth
+  ├── Verify OTP (Legacy)
+  ├── Forgot Password
+  ├── Verify Recovery OTP
+  └── Reset Password
+
+👤 Profile Management
+  ├── Get Profile
+  ├── Update Profile
+  └── Change Password
 ```
 
-### **📄 Pagination Examples:**
+### **🚗 Vehicle Management**
 ```
-# First page, 10 items
-GET /vehicles?page=1&limit=10
+📋 Vehicle CRUD
+  ├── Get All Vehicles
+  ├── Create Vehicle  
+  ├── Get Vehicle by ID
+  ├── Update Vehicle
+  └── Delete Vehicle
 
-# Second page, 20 items
-GET /vehicles?page=2&limit=20
-
-# Sort by price (ascending)
-GET /vehicles?sort=sellingPrice
-
-# Sort by date (descending)
-GET /vehicles?sort=-createdAt
+🔍 Search & Filter
+  ├── Search Vehicles
+  └── Get Vehicle Statistics
 ```
 
-### **🎯 Role-based Testing:**
-1. **User Role**: Basic vehicle operations
-2. **Manager Role**: Vehicle deletion, advanced features
-3. **Admin Role**: User management, system statistics
+### **👥 Client Management**
+```
+├── Get All Clients
+└── Create Client
+```
+
+### **💰 Billing Management**
+```
+└── Get All Billing Records
+```
+
+### **📊 Dashboard & System**
+```
+Dashboard
+└── Get Dashboard Stats
+
+System
+├── Health Check
+└── API Documentation
+```
 
 ---
 
-## ✅ **Step 10: Verification Checklist**
+## 🧪 **Step 5: Complete Testing Flow**
 
-### **✅ Authentication Module:**
-- [ ] User registration works
-- [ ] OTP verification works (1234)
-- [ ] User login successful
-- [ ] JWT token auto-saved
-- [ ] Profile management works
-- [ ] Password change works
-- [ ] Admin user management works
-- [ ] User statistics available
+### **🎯 Recommended Order:**
 
-### **✅ Vehicle Management Module:**
-- [ ] Vehicle creation works
-- [ ] Vehicle listing with filters
-- [ ] Vehicle search functionality
-- [ ] Vehicle update operations
-- [ ] Status management works
-- [ ] File upload works
-- [ ] Maintenance tracking works
-- [ ] Defect management works
-- [ ] Analytics and statistics
+1. **🔄 Authentication Flow**
+   - ✅ Step 1: Register User
+   - ✅ Step 2: Complete Registration  
+   - ✅ Login User
+   - ✅ Get Profile
+
+2. **🚗 Vehicle Operations**
+   - ✅ Create Vehicle
+   - ✅ Get All Vehicles
+   - ✅ Search Vehicles
+   - ✅ Update Vehicle
+
+3. **👥 Other Modules**
+   - ✅ Create Client
+   - ✅ Get Dashboard Stats
+   - ✅ Health Check
 
 ---
 
-## 🎉 **Success!**
+## ⚡ **Step 6: Enhanced Features**
 
-You now have a fully functional Postman collection with:
-- ✅ **33 API Endpoints** ready to test
-- ✅ **Auto-authentication** setup
-- ✅ **Sample test data** included
-- ✅ **Complete workflows** configured
-- ✅ **Error handling** examples
+### **🤖 Auto-Authentication**
+- JWT tokens **automatically captured** after login
+- No manual token copying required
+- All authenticated endpoints use `{{authToken}}`
 
-**Happy Testing! 🚀**
+### **📊 Built-in Tests**
+- Response validation for each request
+- Status code verification
+- Data consistency checks
+- Variable auto-population
+
+### **🎯 Smart Variables**
+- `userId` auto-set after registration
+- `vehicleId` auto-set after creating vehicle
+- `authToken` auto-set after login/registration
 
 ---
 
-## 📞 **Support**
+## 🔧 **Customization Options**
 
-If you encounter any issues:
-1. Check server logs for detailed error messages
-2. Verify environment variables are set correctly
-3. Ensure MongoDB is running
-4. Check API documentation at: http://localhost:3000/api/docs
+### **Change Test Data:**
+1. Click collection settings (⚙️)
+2. Go to **Variables** tab
+3. Update values:
+   - `testPhone` → Your phone number
+   - `baseUrl` → Different server URL
 
-**Collection Version**: 1.0.0  
-**Last Updated**: $(date)  
-**Total Endpoints**: 33  
-**Modules Covered**: Authentication, Vehicle Management
+### **Environment Setup:**
+1. Create new **Environment**
+2. Add variables for different stages:
+   ```
+   Development: http://localhost:5001/api
+   Staging: https://staging.velaa.com/api
+   Production: https://api.velaa.com
+   ```
+
+---
+
+## 🚨 **Troubleshooting Guide**
+
+### **❌ Common Issues & Solutions:**
+
+**Connection Refused**
+```
+Error: connect ECONNREFUSED 127.0.0.1:5001
+```
+**Solution:** Ensure server is running on port 5001
+
+**User Already Exists**
+```
+{"success": false, "message": "User already exists with this phone number"}
+```
+**Solution:** Change `testPhone` variable or use different number
+
+**Invalid OTP**
+```
+{"success": false, "message": "Invalid OTP"}
+```
+**Solution:** Use `1234` for development mode
+
+**Missing Auth Token**
+```
+{"success": false, "message": "Access denied. No token provided"}
+```
+**Solution:** Complete login flow first to get `{{authToken}}`
+
+---
+
+## 📊 **Testing Checklist**
+
+### **✅ Basic Flow**
+- [ ] Step 1: Register User
+- [ ] Step 2: Complete Registration
+- [ ] Login User
+- [ ] Get Profile
+
+### **✅ Vehicle Operations**
+- [ ] Create Vehicle
+- [ ] Get All Vehicles
+- [ ] Search Vehicles
+- [ ] Update Vehicle
+
+### **✅ Error Scenarios**
+- [ ] Register with existing phone
+- [ ] Login with wrong password
+- [ ] Use invalid OTP
+- [ ] Access protected routes without token
+
+---
+
+## 🎯 **Pro Tips**
+
+### **🚀 Speed Up Testing**
+- Use **Collection Runner** to test multiple requests
+- Press `Ctrl/Cmd + Enter` to send requests quickly
+- Check **Test Results** tab for validation
+
+### **📝 Monitor Progress**
+- View **Console** for detailed request/response logs
+- Use **Environment** dropdown to switch between environments
+- Enable **SSL certificate verification** for production
+
+### **🔄 Automation**
+- Set up **monitors** for continuous testing
+- Use **pre-request scripts** for dynamic data
+- Create **workflows** for complex test scenarios
+
+---
+
+## 📞 **Support Resources**
+
+### **🔗 Quick Access:**
+- **API Health**: `GET http://localhost:5001/health`
+- **API Docs**: `GET http://localhost:5001/api/docs`  
+- **Setup Guide**: `POSTMAN_SETUP_GUIDE.md`
+
+### **📚 Documentation:**
+- **Registration Flow**: `NEW_REGISTRATION_FLOW_GUIDE.md`
+- **API Reference**: `API_ENDPOINTS_REFERENCE.md`
+- **Server Setup**: `README.md`
+
+---
+
+## 🎉 **What's New in v2.0.0**
+
+### **✨ Major Updates:**
+- ✅ **2-Step Registration** - Simplified user onboarding
+- ✅ **Port Update** - Now using port 5001  
+- ✅ **Auto-Testing** - Built-in response validation
+- ✅ **Smart Variables** - Auto-population of tokens/IDs
+- ✅ **Better Organization** - Improved folder structure
+- ✅ **Complete Coverage** - All endpoints tested
+
+### **🚀 Ready to Import!**
+
+Your Postman collection now includes:
+- ✅ **50+ API endpoints** ready to test
+- ✅ **Automatic authentication** handling
+- ✅ **Built-in testing scripts** for validation
+- ✅ **Real-world test data** for immediate use
+- ✅ **Production-ready** configuration
+
+**Start testing in under 2 minutes! 🚀**

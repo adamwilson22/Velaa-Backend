@@ -1,37 +1,37 @@
 const User = require('../models/User');
 const { generateToken } = require('../config/jwt');
 const smsService = require('../services/smsService');
-const emailService = require('../services/emailService');
 const { responseHelpers } = require('../utils/helpers');
 const { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } = require('../utils/constants');
 const Validators = require('../utils/validators');
 
 class AuthController {
-  // User registration
+  // Step 1: Initial user registration (basic info only)
   async register(req, res) {
     try {
       const userData = req.body;
 
-      // Validate user data
-      const validation = Validators.validateUserData(userData);
+      // Validate registration data
+      const validation = Validators.validateRegistrationData(userData);
       if (!validation.isValid) {
         return responseHelpers.error(res, 'Validation failed', HTTP_STATUS.BAD_REQUEST, validation.errors);
       }
 
-      // Check if user already exists
-      const existingUser = await User.findOne({
-        $or: [
-          { email: userData.email },
-          { phone: userData.phone }
-        ]
-      });
+      // Check if user already exists with this phone
+      const existingUser = await User.findOne({ phone: userData.phone });
 
       if (existingUser) {
-        return responseHelpers.error(res, 'User already exists with this email or phone', HTTP_STATUS.CONFLICT);
+        return responseHelpers.error(res, 'User already exists with this phone number', HTTP_STATUS.CONFLICT);
       }
 
-      // Create new user
-      const user = new User(userData);
+      // Create new user with minimal data and 'pending' status
+      const user = new User({
+        ownerManagerName: userData.ownerManagerName,
+        warehouseName: userData.warehouseName,
+        phone: userData.phone,
+        status: 'pending'
+      });
+      
       await user.save();
 
       // Generate OTP for phone verification
@@ -49,26 +49,14 @@ class AuthController {
         // Continue with registration even if SMS fails
       }
 
-      // Send welcome email (optional)
-      if (emailService.isAvailable()) {
-        try {
-          await emailService.sendWelcomeEmail(userData.email, {
-            fullName: user.fullName,
-            firstName: user.firstName,
-            email: user.email,
-            warehouseName: user.warehouseName,
-            userId: user._id
-          });
-        } catch (emailError) {
-          console.error('Welcome email sending failed:', emailError);
-        }
-      }
-
       return responseHelpers.success(res, {
-        message: 'Registration successful. Please verify your phone number with the OTP sent.',
+        message: 'Registration initiated. Please verify your phone number with the OTP sent.',
         userId: user._id,
         phone: user.phone,
-        otpSent: true
+        ownerManagerName: user.ownerManagerName,
+        warehouseName: user.warehouseName,
+        otpSent: true,
+        nextStep: 'verify-otp'
       }, SUCCESS_MESSAGES.REGISTRATION_SUCCESS, HTTP_STATUS.CREATED);
 
     } catch (error) {
@@ -77,15 +65,73 @@ class AuthController {
     }
   }
 
-  // Verify OTP
+  // Step 3: Complete registration (password creation only)
+  async completeRegistration(req, res) {
+    try {
+      const { phone, password } = req.body;
+
+      // Validate complete registration data
+      const validation = Validators.validateCompleteRegistrationData(req.body);
+      if (!validation.isValid) {
+        return responseHelpers.error(res, 'Validation failed', HTTP_STATUS.BAD_REQUEST, validation.errors);
+      }
+
+      // Find user with otp-verified status
+      const user = await User.findOne({ phone, status: 'otp-verified' });
+      if (!user) {
+        return responseHelpers.error(res, 'User not found or OTP not verified yet', HTTP_STATUS.NOT_FOUND);
+      }
+
+      // Check if OTP is verified
+      if (!user.isOtpVerified) {
+        return responseHelpers.error(res, 'Please verify your OTP first', HTTP_STATUS.BAD_REQUEST);
+      }
+
+      // Set password and update status to active
+      user.password = password;
+      user.status = 'active';
+      await user.save();
+
+      // Generate JWT token
+      const token = generateToken({ userId: user._id, role: user.role });
+
+      return responseHelpers.success(res, {
+        message: 'Registration completed successfully! You can now use your account.',
+        token,
+        user: {
+          id: user._id,
+          ownerManagerName: user.ownerManagerName,
+          phone: user.phone,
+          warehouseName: user.warehouseName,
+          status: user.status,
+          role: user.role,
+          isPhoneVerified: user.isPhoneVerified,
+          isOtpVerified: user.isOtpVerified,
+          createdAt: user.createdAt
+        }
+      }, SUCCESS_MESSAGES.REGISTRATION_COMPLETED, HTTP_STATUS.OK);
+
+    } catch (error) {
+      console.error('Complete registration error:', error);
+      return responseHelpers.error(res, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // Step 2: Verify OTP only (no password creation)
   async verifyOtp(req, res) {
     try {
       const { phone, otp } = req.body;
 
-      // Find user by phone
-      const user = await User.findOne({ phone });
+      // Validate OTP verification data
+      const validation = Validators.validateOtpVerificationData(req.body);
+      if (!validation.isValid) {
+        return responseHelpers.error(res, 'Validation failed', HTTP_STATUS.BAD_REQUEST, validation.errors);
+      }
+
+      // Find user with pending status (include OTP fields)
+      const user = await User.findOne({ phone, status: 'pending' }).select('+otp.code +otp.expiresAt +otp.attempts +otp.type');
       if (!user) {
-        return responseHelpers.error(res, 'User not found', HTTP_STATUS.NOT_FOUND);
+        return responseHelpers.error(res, 'User not found or OTP already verified', HTTP_STATUS.NOT_FOUND);
       }
 
       // Verify OTP
@@ -94,26 +140,24 @@ class AuthController {
         return responseHelpers.error(res, otpValidation.message, HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Mark phone as verified
+      // Mark OTP as verified and update status
       user.isPhoneVerified = true;
+      user.isOtpVerified = true;
+      user.status = 'otp-verified';
       await user.save();
 
-      // Generate JWT token
-      const token = generateToken({ userId: user._id, role: user.role });
-
       return responseHelpers.success(res, {
-        token,
+        message: 'OTP verified successfully! Now create your password.',
         user: {
           id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
+          ownerManagerName: user.ownerManagerName,
           phone: user.phone,
-          role: user.role,
           warehouseName: user.warehouseName,
+          status: user.status,
           isPhoneVerified: user.isPhoneVerified,
-          isEmailVerified: user.isEmailVerified
-        }
+          isOtpVerified: user.isOtpVerified
+        },
+        nextStep: 'create-password'
       }, SUCCESS_MESSAGES.OTP_VERIFIED);
 
     } catch (error) {
