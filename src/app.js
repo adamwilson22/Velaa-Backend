@@ -43,16 +43,37 @@ app.use(helmet({
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
+    console.log(`CORS check for origin: ${origin}`);
+    
+    // Allow requests with no origin (mobile apps, Postman, file:// protocol, etc.)
+    // This handles the case where origin is null (like when opening HTML files directly)
+    if (!origin || origin === 'null') {
+      console.log('Allowing request with no origin or null origin');
+      return callback(null, true);
+    }
+    
+    // In development mode, be more permissive
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+      console.log('Development mode - allowing origin:', origin);
+      // Allow common development scenarios
+      if (origin.startsWith('http://localhost:') || 
+          origin.startsWith('http://127.0.0.1:') ||
+          origin.startsWith('file://') ||
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
     
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',')
-      : ['http://localhost:3000', 'http://localhost:3001'];
+      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:8000', 'http://localhost:8080', 'http://127.0.0.1:5500'];
     
     if (allowedOrigins.includes(origin)) {
+      console.log('Origin allowed by whitelist:', origin);
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },

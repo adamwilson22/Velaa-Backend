@@ -24,11 +24,14 @@ class AuthController {
         return responseHelpers.error(res, 'User already exists with this phone number', HTTP_STATUS.CONFLICT);
       }
 
+      // Normalize phone number to international format
+      const normalizedPhone = require('../utils/helpers').validationHelpers.normalizeTanzaniaPhone(userData.phone);
+
       // Create new user with minimal data and 'pending' status
       const user = new User({
         ownerManagerName: userData.ownerManagerName,
         warehouseName: userData.warehouseName,
-        phone: userData.phone,
+        phone: normalizedPhone,
         status: 'pending'
       });
       
@@ -68,7 +71,10 @@ class AuthController {
   // Step 3: Complete registration (password creation only)
   async completeRegistration(req, res) {
     try {
-      const { phone, password } = req.body;
+      const { phone: rawPhone, password } = req.body;
+      
+      // Normalize phone number for consistent lookup
+      const phone = require('../utils/helpers').validationHelpers.normalizeTanzaniaPhone(rawPhone);
 
       // Validate complete registration data
       const validation = Validators.validateCompleteRegistrationData(req.body);
@@ -120,7 +126,10 @@ class AuthController {
   // Step 2: Verify OTP only (no password creation)
   async verifyOtp(req, res) {
     try {
-      const { phone, otp } = req.body;
+      const { phone: rawPhone, otp } = req.body;
+      
+      // Normalize phone number for consistent lookup
+      const phone = require('../utils/helpers').validationHelpers.normalizeTanzaniaPhone(rawPhone);
 
       // Validate OTP verification data
       const validation = Validators.validateOtpVerificationData(req.body);
@@ -169,7 +178,10 @@ class AuthController {
   // User login
   async login(req, res) {
     try {
-      const { phone, password } = req.body;
+      const { phone: rawPhone, password } = req.body;
+      
+      // Normalize phone number for consistent lookup
+      const phone = require('../utils/helpers').validationHelpers.normalizeTanzaniaPhone(rawPhone);
 
       // Find user by phone and include password
       const user = await User.findOne({ phone }).select('+password');
@@ -230,14 +242,18 @@ class AuthController {
   // Forgot password
   async forgotPassword(req, res) {
     try {
-      const { phone } = req.body;
+      const { phone: rawPhone } = req.body;
+      
+      // Normalize phone number for consistent lookup
+      const phone = require('../utils/helpers').validationHelpers.normalizeTanzaniaPhone(rawPhone);
 
       // Find user by phone
       const user = await User.findOne({ phone });
       if (!user) {
-        // Don't reveal if user exists or not
+        // Don't reveal if user exists or not - but still return success for security
         return responseHelpers.success(res, {
-          message: 'If a user with this phone number exists, a password reset OTP has been sent.'
+          message: 'If a user with this phone number exists, a password reset OTP has been sent.',
+          note: 'Development mode: OTP is always 1234'
         }, 'Password reset OTP sent');
       }
 
@@ -245,17 +261,35 @@ class AuthController {
       const otp = user.generateOTP('password-reset');
       await user.save();
 
-      // Send OTP via SMS
-      try {
-        await smsService.sendPasswordResetOTP(phone);
-      } catch (smsError) {
-        console.error('Password reset SMS sending failed:', smsError);
-        return responseHelpers.error(res, 'Failed to send OTP. Please try again.', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+      // In development mode, don't actually send SMS - just log the OTP
+      if (process.env.NODE_ENV === 'development' || process.env.MOCK_SMS === 'true') {
+        console.log(`📱 Password Reset OTP for ${phone}: ${otp}`);
+        
+        return responseHelpers.success(res, {
+          message: 'Password reset OTP generated successfully.',
+          phone: phone,
+          note: 'Development mode: OTP is 1234',
+          otpGenerated: true
+        }, 'Password reset OTP sent');
       }
 
-      return responseHelpers.success(res, {
-        message: 'Password reset OTP sent to your phone number.'
-      }, 'Password reset OTP sent');
+      // In production, try to send actual SMS
+      try {
+        await smsService.sendPasswordResetOTP(phone);
+        
+        return responseHelpers.success(res, {
+          message: 'Password reset OTP sent to your phone number.'
+        }, 'Password reset OTP sent');
+      } catch (smsError) {
+        console.error('Password reset SMS sending failed:', smsError);
+        
+        // Even if SMS fails, OTP is generated and saved - user can still use it
+        return responseHelpers.success(res, {
+          message: 'OTP generated but SMS sending failed. Please try again or contact support.',
+          phone: phone,
+          note: 'Development mode: OTP is 1234'
+        }, 'Password reset OTP sent');
+      }
 
     } catch (error) {
       console.error('Forgot password error:', error);
@@ -266,10 +300,13 @@ class AuthController {
   // Verify recovery OTP
   async verifyRecoveryOtp(req, res) {
     try {
-      const { phone, otp } = req.body;
+      const { phone: rawPhone, otp } = req.body;
+      
+      // Normalize phone number for consistent lookup
+      const phone = require('../utils/helpers').validationHelpers.normalizeTanzaniaPhone(rawPhone);
 
-      // Find user by phone
-      const user = await User.findOne({ phone });
+      // Find user by phone (include OTP fields)
+      const user = await User.findOne({ phone }).select('+otp.code +otp.expiresAt +otp.attempts +otp.type');
       if (!user) {
         return responseHelpers.error(res, 'User not found', HTTP_STATUS.NOT_FOUND);
       }
@@ -297,10 +334,13 @@ class AuthController {
   // Reset password
   async resetPassword(req, res) {
     try {
-      const { phone, otp, newPassword } = req.body;
+      const { phone: rawPhone, otp, newPassword } = req.body;
+      
+      // Normalize phone number for consistent lookup
+      const phone = require('../utils/helpers').validationHelpers.normalizeTanzaniaPhone(rawPhone);
 
-      // Find user by phone
-      const user = await User.findOne({ phone });
+      // Find user by phone (include OTP fields)
+      const user = await User.findOne({ phone }).select('+otp.code +otp.expiresAt +otp.attempts +otp.type');
       if (!user) {
         return responseHelpers.error(res, 'User not found', HTTP_STATUS.NOT_FOUND);
       }
@@ -311,10 +351,15 @@ class AuthController {
         return responseHelpers.error(res, otpValidation.message, HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Validate new password
-      const passwordValidation = Validators.validateUserData({ password: newPassword });
+      // Validate new password strength only
+      const { validationHelpers } = require('../utils/helpers');
+      const passwordValidation = validationHelpers.validatePasswordStrength(newPassword);
       if (!passwordValidation.isValid) {
-        return responseHelpers.error(res, 'Password validation failed', HTTP_STATUS.BAD_REQUEST, passwordValidation.errors);
+        return responseHelpers.error(res, 'Password validation failed', HTTP_STATUS.BAD_REQUEST, [{
+          field: 'newPassword',
+          message: 'Password must meet security requirements',
+          requirements: passwordValidation.requirements
+        }]);
       }
 
       // Update password
@@ -654,10 +699,15 @@ class AuthController {
         return responseHelpers.error(res, 'Current password is incorrect', HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Validate new password
-      const passwordValidation = Validators.validateUserData({ password: newPassword });
+      // Validate new password strength only
+      const { validationHelpers } = require('../utils/helpers');
+      const passwordValidation = validationHelpers.validatePasswordStrength(newPassword);
       if (!passwordValidation.isValid) {
-        return responseHelpers.error(res, 'Password validation failed', HTTP_STATUS.BAD_REQUEST, passwordValidation.errors);
+        return responseHelpers.error(res, 'Password validation failed', HTTP_STATUS.BAD_REQUEST, [{
+          field: 'newPassword',
+          message: 'Password must meet security requirements',
+          requirements: passwordValidation.requirements
+        }]);
       }
 
       // Check if new password is different from current

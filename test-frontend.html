@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velaa API Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            background: #f8f9fa;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .result.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .api-info {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .api-info h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .api-info p {
+            color: #6c757d;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Velaa API</h1>
+            <p>Test Frontend for Vehicle Management System</p>
+        </div>
+        
+        <div class="content">
+            <div class="api-info">
+                <h3>📡 API Configuration</h3>
+                <p>Base URL: <strong id="api-base">http://localhost:5001/api</strong></p>
+                <p>Make sure your backend server is running on port 5001</p>
+            </div>
+            
+            <!-- Health Check Section -->
+            <div class="form-group">
+                <button type="button" class="btn" onclick="testHealthCheck()">
+                    🏥 Test Health Check
+                </button>
+            </div>
+            
+            <!-- Registration Section -->
+            <div class="form-group">
+                <h3 style="margin-bottom: 20px; color: #333;">👤 User Registration</h3>
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" placeholder="Enter your full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number (Tanzania):</label>
+                <input type="text" id="phoneNumber" placeholder="+255 22 1234567" value="+255 22 1234567">
+                <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
+                    Valid formats: +255 7XX XXX XXX, 07XX XXX XXX, 7XX XXX XXX, +255 22 XXXXXXX
+                </small>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter password">
+            </div>
+            
+            <div class="form-group">
+                <button type="button" class="btn" onclick="registerUser()">
+                    📝 Register User
+                </button>
+            </div>
+            
+            <!-- OTP Verification Section -->
+            <div id="otpSection" class="hidden">
+                <div class="form-group">
+                    <h3 style="margin-bottom: 20px; color: #333;">🔐 OTP Verification</h3>
+                    <label for="otpCode">OTP Code:</label>
+                    <input type="text" id="otpCode" placeholder="Enter 6-digit OTP">
+                </div>
+                
+                <div class="form-group">
+                    <button type="button" class="btn btn-secondary" onclick="verifyOTP()">
+                        ✅ Verify OTP
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Login Section -->
+            <div class="form-group">
+                <h3 style="margin-bottom: 20px; color: #333;">🔑 User Login</h3>
+                <button type="button" class="btn btn-secondary" onclick="loginUser()">
+                    🚪 Login with Above Credentials
+                </button>
+            </div>
+            
+            <!-- Forgot Password Section -->
+            <div class="form-group">
+                <h3 style="margin-bottom: 20px; color: #333;">🔐 Forgot Password</h3>
+                <button type="button" class="btn btn-secondary" onclick="forgotPassword()">
+                    📧 Send Password Reset OTP
+                </button>
+            </div>
+            
+            <!-- Password Reset Section -->
+            <div id="resetSection" class="hidden">
+                <div class="form-group">
+                    <h3 style="margin-bottom: 20px; color: #333;">🔄 Reset Password</h3>
+                    <label for="resetOTP">Reset OTP:</label>
+                    <input type="text" id="resetOTP" placeholder="Enter 1234" value="1234">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newPassword">New Password:</label>
+                    <input type="password" id="newPassword" placeholder="Enter new password (8+ chars, uppercase, lowercase, number)">
+                    <small style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
+                        Required: 8+ characters, uppercase, lowercase, number. Special characters recommended.
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <button type="button" class="btn btn-secondary" onclick="resetPassword()">
+                        🔄 Reset Password
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Processing request...</p>
+            </div>
+            
+            <!-- Result Display -->
+            <div id="result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        let currentUserId = null;
+        let currentToken = null;
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showResult(data, isError = false) {
+            hideLoading();
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function makeRequest(endpoint, method = 'GET', data = null, includeAuth = false) {
+            try {
+                showLoading();
+                
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+
+                if (includeAuth && currentToken) {
+                    options.headers['Authorization'] = `Bearer ${currentToken}`;
+                }
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                console.log(`Making ${method} request to: ${API_BASE}${endpoint}`);
+                console.log('Request options:', options);
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const responseData = await response.json();
+
+                console.log('Response:', responseData);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${responseData.message || 'Request failed'}`);
+                }
+
+                showResult(responseData);
+                return responseData;
+            } catch (error) {
+                console.error('Request failed:', error);
+                showResult({
+                    error: error.message,
+                    details: 'Check browser console for more details'
+                }, true);
+                throw error;
+            }
+        }
+
+        async function testHealthCheck() {
+            try {
+                const response = await makeRequest('/health', 'GET');
+                console.log('Health check successful:', response);
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        async function registerUser() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!fullName || !phoneNumber || !password) {
+                showResult({
+                    error: 'Please fill in all fields',
+                    required: ['fullName', 'phoneNumber', 'password']
+                }, true);
+                return;
+            }
+
+            try {
+                const response = await makeRequest('/auth/register', 'POST', {
+                    fullName,
+                    phoneNumber,
+                    password
+                });
+
+                if (response.success) {
+                    currentUserId = response.data?.user?.id || response.data?.userId;
+                    document.getElementById('otpSection').classList.remove('hidden');
+                    
+                    // Show a user-friendly message
+                    showResult({
+                        message: 'Registration successful! OTP sent to your phone.',
+                        nextStep: 'Please enter the OTP below to verify your account',
+                        userId: currentUserId,
+                        note: 'In development mode, you can use any 6-digit number as OTP'
+                    });
+                }
+            } catch (error) {
+                console.error('Registration failed:', error);
+            }
+        }
+
+        async function verifyOTP() {
+            const otpCode = document.getElementById('otpCode').value.trim();
+
+            if (!otpCode) {
+                showResult({
+                    error: 'Please enter OTP code'
+                }, true);
+                return;
+            }
+
+            if (!currentUserId) {
+                showResult({
+                    error: 'No user ID found. Please register first.'
+                }, true);
+                return;
+            }
+
+            try {
+                const response = await makeRequest('/auth/verify-otp', 'POST', {
+                    userId: currentUserId,
+                    otp: otpCode
+                });
+
+                if (response.success) {
+                    currentToken = response.data?.token;
+                    showResult({
+                        message: 'OTP verification successful!',
+                        userVerified: true,
+                        token: currentToken ? 'Token received' : 'No token in response'
+                    });
+                }
+            } catch (error) {
+                console.error('OTP verification failed:', error);
+            }
+        }
+
+        async function loginUser() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!phoneNumber || !password) {
+                showResult({
+                    error: 'Please fill in phone number and password'
+                }, true);
+                return;
+            }
+
+            try {
+                const response = await makeRequest('/auth/login', 'POST', {
+                    phoneNumber,
+                    password
+                });
+
+                if (response.success) {
+                    currentToken = response.data?.token;
+                    currentUserId = response.data?.user?.id;
+                    
+                    showResult({
+                        message: 'Login successful!',
+                        user: response.data?.user,
+                        token: currentToken ? 'Token received' : 'No token in response'
+                    });
+                }
+            } catch (error) {
+                console.error('Login failed:', error);
+            }
+        }
+
+        async function forgotPassword() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+
+            if (!phoneNumber) {
+                showResult({
+                    error: 'Please enter phone number'
+                }, true);
+                return;
+            }
+
+            try {
+                const response = await makeRequest('/auth/forgot-password', 'POST', {
+                    phone: phoneNumber
+                });
+
+                if (response.success) {
+                    document.getElementById('resetSection').classList.remove('hidden');
+                    
+                    showResult({
+                        message: 'Password reset OTP sent!',
+                        note: 'Development mode: OTP is always 1234',
+                        nextStep: 'Enter 1234 as OTP and set a new password',
+                        phone: phoneNumber
+                    });
+                }
+            } catch (error) {
+                console.error('Forgot password failed:', error);
+            }
+        }
+
+        async function resetPassword() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const otp = document.getElementById('resetOTP').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+
+            if (!phoneNumber || !otp || !newPassword) {
+                showResult({
+                    error: 'Please fill in all fields'
+                }, true);
+                return;
+            }
+
+            try {
+                const response = await makeRequest('/auth/reset-password', 'POST', {
+                    phone: phoneNumber,
+                    otp: otp,
+                    newPassword: newPassword
+                });
+
+                if (response.success) {
+                    showResult({
+                        message: 'Password reset successful!',
+                        note: 'You can now login with your new password',
+                        nextStep: 'Use the login section above with your new password'
+                    });
+                    
+                    // Update the password field with new password for easy testing
+                    document.getElementById('password').value = newPassword;
+                }
+            } catch (error) {
+                console.error('Password reset failed:', error);
+            }
+        }
+
+        // Update API base URL in the UI
+        document.getElementById('api-base').textContent = API_BASE;
+
+        // Tanzania phone number examples
+        const tanzaniaPhoneExamples = [
+            '+255 22 1234567',   // Your example
+            '+255 754 123456',   // Vodacom
+            '+255 715 123456',   // Airtel
+            '+255 689 123456',   // Tigo
+            '0754 123456',       // Local Vodacom
+            '0715 123456',       // Local Airtel
+            '754 123456'         // Without prefix
+        ];
+
+        // Function to cycle through phone examples
+        function cycleTanzaniaPhoneExample() {
+            const phoneInput = document.getElementById('phoneNumber');
+            const currentIndex = tanzaniaPhoneExamples.indexOf(phoneInput.value);
+            const nextIndex = (currentIndex + 1) % tanzaniaPhoneExamples.length;
+            phoneInput.value = tanzaniaPhoneExamples[nextIndex];
+        }
+
+        // Add click listener to phone input for cycling examples
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phoneNumber');
+            let clickCount = 0;
+            
+            phoneInput.addEventListener('focus', function() {
+                if (clickCount === 0) {
+                    showResult({
+                        tip: 'Tanzania Phone Format Examples',
+                        examples: tanzaniaPhoneExamples,
+                        note: 'Click the phone field multiple times to see different examples'
+                    });
+                    clickCount++;
+                }
+            });
+            
+            phoneInput.addEventListener('click', function() {
+                if (clickCount > 0) {
+                    cycleTanzaniaPhoneExample();
+                }
+            });
+        });
+
+        // Test initial connection
+        window.addEventListener('load', function() {
+            console.log('Page loaded. Testing API connection...');
+            setTimeout(testHealthCheck, 1000);
+        });
+    </script>
+</body>
+</html>

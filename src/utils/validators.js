@@ -81,20 +81,20 @@ class Validators {
       });
     }
 
-    // Phone validation
-    if (!validationHelpers.isValidPhone(clientData.phone)) {
+    // Phone validation (Tanzania specific)
+    if (!validationHelpers.isValidTanzaniaPhone(clientData.phone)) {
       errors.push({
         field: 'phone',
-        message: 'Invalid phone number format',
+        message: 'Invalid Tanzania phone number format. Please use formats like +255 7XX XXX XXX, 07XX XXX XXX, or 7XX XXX XXX',
       });
     }
 
     // Alternate phone validation (if provided)
     if (clientData.alternatePhone && 
-        !validationHelpers.isValidPhone(clientData.alternatePhone)) {
+        !validationHelpers.isValidTanzaniaPhone(clientData.alternatePhone)) {
       errors.push({
         field: 'alternatePhone',
-        message: 'Invalid alternate phone number format',
+        message: 'Invalid Tanzania phone number format. Please use formats like +255 7XX XXX XXX, 07XX XXX XXX, or 7XX XXX XXX',
       });
     }
 
@@ -151,11 +151,11 @@ class Validators {
       });
     }
 
-    // Phone validation
-    if (!validationHelpers.isValidPhone(userData.phone)) {
+    // Phone validation (Tanzania specific)
+    if (!validationHelpers.isValidTanzaniaPhone(userData.phone)) {
       errors.push({
         field: 'phone',
-        message: 'Invalid phone number format',
+        message: 'Invalid Tanzania phone number format. Please use formats like +255 7XX XXX XXX, 07XX XXX XXX, or 7XX XXX XXX',
       });
     }
 
@@ -213,11 +213,11 @@ class Validators {
       });
     }
 
-    // Phone validation
-    if (!validationHelpers.isValidPhone(userData.phone)) {
+    // Phone validation (Tanzania specific)
+    if (!validationHelpers.isValidTanzaniaPhone(userData.phone)) {
       errors.push({
         field: 'phone',
-        message: 'Invalid phone number format',
+        message: 'Invalid Tanzania phone number format. Please use formats like +255 7XX XXX XXX, 07XX XXX XXX, or 7XX XXX XXX',
       });
     }
 
@@ -231,11 +231,11 @@ class Validators {
   static validateCompleteRegistrationData(userData) {
     const errors = [];
 
-    // Phone validation
-    if (!validationHelpers.isValidPhone(userData.phone)) {
+    // Phone validation (Tanzania specific)
+    if (!validationHelpers.isValidTanzaniaPhone(userData.phone)) {
       errors.push({
         field: 'phone',
-        message: 'Invalid phone number format',
+        message: 'Invalid Tanzania phone number format. Please use formats like +255 7XX XXX XXX, 07XX XXX XXX, or 7XX XXX XXX',
       });
     }
 
@@ -266,11 +266,11 @@ class Validators {
   static validateOtpVerificationData(userData) {
     const errors = [];
 
-    // Phone validation
-    if (!validationHelpers.isValidPhone(userData.phone)) {
+    // Phone validation (Tanzania specific)
+    if (!validationHelpers.isValidTanzaniaPhone(userData.phone)) {
       errors.push({
         field: 'phone',
-        message: 'Invalid phone number format',
+        message: 'Invalid Tanzania phone number format. Please use formats like +255 7XX XXX XXX, 07XX XXX XXX, or 7XX XXX XXX',
       });
     }
 

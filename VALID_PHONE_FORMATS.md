@@ -1,94 +1,92 @@
 # 📱 Valid Phone Number Formats
 
-## ✅ **Now Accepting International Phone Numbers**
+## ✅ **Now Accepting Tanzania Phone Numbers**
 
-I've updated the phone validation to accept international phone number formats instead of just Indian numbers.
-
----
-
-## 📋 **Valid Phone Number Examples**
-
-### **✅ US/Canada Format:**
-```json
-{
-  "phone": "+1234567890"
-}
-```
-```json
-{
-  "phone": "1234567890"
-}
-```
-```json
-{
-  "phone": "+1 (234) 567-890"
-}
-```
-
-### **✅ Indian Format:**
-```json
-{
-  "phone": "+919876543210"
-}
-```
-```json
-{
-  "phone": "9876543210"
-}
-```
-```json
-{
-  "phone": "+91 98765 43210"
-}
-```
-
-### **✅ UK Format:**
-```json
-{
-  "phone": "+447911123456"
-}
-```
-```json
-{
-  "phone": "07911123456"
-}
-```
-
-### **✅ Other International:**
-```json
-{
-  "phone": "+86123456789012"
-}
-```
-```json
-{
-  "phone": "+491234567890"
-}
-```
+I've updated the phone validation to specifically accept Tanzania phone number formats with proper validation and normalization.
 
 ---
 
-## 🔧 **Validation Rules**
+## 📋 **Valid Tanzania Phone Number Examples**
 
-### **✅ Accepted:**
-- **Length:** 10-15 digits (after removing spaces, dashes, parentheses)
-- **Format:** Can include `+`, spaces, dashes, parentheses
-- **Examples:**
-  - `+1234567890`
-  - `1234567890`
-  - `+1 (234) 567-890`
-  - `+91 98765 43210`
-  - `123-456-7890`
+### **✅ Mobile Numbers (Vodacom, Airtel, Tigo):**
+```json
+{
+  "phone": "+255 754 123456"
+}
+```
+```json
+{
+  "phone": "+255754123456"
+}
+```
+```json
+{
+  "phone": "0754123456"
+}
+```
+```json
+{
+  "phone": "754123456"
+}
+```
+
+### **✅ Landline Numbers (Dar es Salaam):**
+```json
+{
+  "phone": "+255 22 1234567"
+}
+```
+```json
+{
+  "phone": "+255221234567"
+}
+```
+```json
+{
+  "phone": "022 1234567"
+}
+```
+
+### **✅ Different Mobile Networks:**
+```json
+{
+  "phone": "+255 715 123456"
+}
+```
+```json
+{
+  "phone": "+255 689 123456"
+}
+```
+```json
+{
+  "phone": "+255 782 123456"
+}
+```
+
+---
+
+## 🔧 **Tanzania Phone Validation Rules**
+
+### **✅ Accepted Formats:**
+- **Mobile:** +255 6XX XXX XXX, +255 7XX XXX XXX, +255 8XX XXX XXX
+- **Landline:** +255 22 XXX XXXX (Dar es Salaam), +255 27 XXX XXXX (Mwanza)
+- **Local Mobile:** 0 6XX XXX XXX, 0 7XX XXX XXX, 0 8XX XXX XXX
+- **Short Mobile:** 6XX XXX XXX, 7XX XXX XXX, 8XX XXX XXX
+- **Flexible spacing:** Supports spaces, dashes, parentheses
+
+### **✅ Mobile Network Prefixes:**
+- **Vodacom:** 74X, 75X, 76X
+- **Airtel:** 68X, 69X, 71X, 78X
+- **Tigo:** 65X, 67X, 71X
+- **Halotel:** 62X
+- **TTCL:** 73X
 
 ### **❌ Rejected:**
-- **Too short:** Less than 10 digits
-- **Too long:** More than 15 digits
+- **Wrong country code:** Numbers not starting with +255/255/0
+- **Invalid mobile prefix:** Not starting with 6, 7, or 8 for mobile
+- **Wrong length:** Mobile not 9 digits, landline variations
 - **Invalid characters:** Letters, special characters (except +, -, (), spaces)
-- **Examples:**
-  - `123456789` (too short)
-  - `1234567890123456` (too long)
-  - `abc123456789` (contains letters)
-  - `123@456#7890` (invalid characters)
 
 ---
 

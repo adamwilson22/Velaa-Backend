@@ -380,6 +380,54 @@ const validationHelpers = {
     return phoneRegex.test(cleanPhone);
   },
 
+  // Validate Tanzania phone number specifically
+  isValidTanzaniaPhone: (phone) => {
+    // Remove all non-digit characters except +
+    const cleanPhone = phone.replace(/[\s-()]/g, '');
+    
+    // Tanzania country code is +255
+    // Mobile numbers: +255 6XX XXX XXX, +255 7XX XXX XXX, +255 8XX XXX XXX
+    // Landline numbers: +255 22 XXX XXXX (Dar es Salaam), +255 27 XXX XXXX (Mwanza), etc.
+    
+    // Pattern 1: +255 followed by 9 digits (mobile)
+    // Pattern 2: 255 followed by 9 digits (mobile without +)
+    // Pattern 3: 0 followed by 9 digits (local format)
+    // Pattern 4: 9 digits starting with 6, 7, or 8 (mobile without country code)
+    
+    const patterns = [
+      /^\+255[678]\d{8}$/,           // +255 6/7/8XX XXX XXX (international mobile)
+      /^255[678]\d{8}$/,             // 255 6/7/8XX XXX XXX (without + prefix)
+      /^0[678]\d{8}$/,               // 0 6/7/8XX XXX XXX (local mobile format)
+      /^[678]\d{8}$/,                // 6/7/8XX XXX XXX (mobile without country code)
+      /^\+25522\d{7}$/,              // +255 22 XXX XXXX (Dar es Salaam landline)
+      /^25522\d{7}$/,                // 255 22 XXX XXXX (landline without +)
+      /^022\d{7}$/,                  // 022 XXX XXXX (local landline format)
+    ];
+    
+    return patterns.some(pattern => pattern.test(cleanPhone));
+  },
+
+  // Normalize Tanzania phone number to international format
+  normalizeTanzaniaPhone: (phone) => {
+    // Remove all non-digit characters except +
+    const cleanPhone = phone.replace(/[\s-()]/g, '');
+    
+    // Convert to international format (+255XXXXXXXXX)
+    if (cleanPhone.startsWith('+255')) {
+      return cleanPhone; // Already in international format
+    } else if (cleanPhone.startsWith('255')) {
+      return '+' + cleanPhone; // Add + prefix
+    } else if (cleanPhone.startsWith('0')) {
+      return '+255' + cleanPhone.substring(1); // Replace 0 with +255
+    } else if (/^[678]\d{8}$/.test(cleanPhone)) {
+      return '+255' + cleanPhone; // Mobile number without country code
+    } else if (cleanPhone.startsWith('22') && cleanPhone.length === 9) {
+      return '+255' + cleanPhone; // Landline without country code
+    }
+    
+    return phone; // Return original if no pattern matches
+  },
+
   // Validate PAN number
   isValidPAN: (pan) => {
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
