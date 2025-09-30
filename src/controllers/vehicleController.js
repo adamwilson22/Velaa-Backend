@@ -6,6 +6,13 @@ const { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES, VEHICLE_CONSTANTS } = req
 const Validators = require('../utils/validators');
 
 class VehicleController {
+  constructor() {
+    // Bind methods that rely on `this` so Express doesn't lose context
+    this.searchVehicles = this.searchVehicles.bind(this);
+    this.updateVehicleStatus = this.updateVehicleStatus.bind(this);
+    this.parseSortString = this.parseSortString.bind(this);
+    this.getValidStatusTransitions = this.getValidStatusTransitions.bind(this);
+  }
   // Get all vehicles with pagination and filtering
   async getAllVehicles(req, res) {
     try {

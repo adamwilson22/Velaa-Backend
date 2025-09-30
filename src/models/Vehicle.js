@@ -100,13 +100,13 @@ const vehicleSchema = new mongoose.Schema({
   condition: {
     type: String,
     enum: ['Excellent', 'Good', 'Fair', 'Poor', 'Damaged'],
-    required: [true, 'Vehicle condition is required'],
+    default: 'Good',
   },
 
   // Financial Information
   purchasePrice: {
     type: Number,
-    required: [true, 'Purchase price is required'],
+    default: 0,
     min: [0, 'Purchase price cannot be negative'],
   },
   sellingPrice: {
@@ -121,7 +121,7 @@ const vehicleSchema = new mongoose.Schema({
   // Dates
   purchaseDate: {
     type: Date,
-    required: [true, 'Purchase date is required'],
+    default: Date.now,
   },
   saleDate: {
     type: Date,
@@ -140,7 +140,7 @@ const vehicleSchema = new mongoose.Schema({
   location: {
     warehouse: {
       type: String,
-      required: [true, 'Warehouse location is required'],
+      default: 'Main',
       trim: true,
     },
     section: {
