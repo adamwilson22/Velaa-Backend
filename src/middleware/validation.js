@@ -137,7 +137,8 @@ const userSchemas = {
 
   resetPassword: Joi.object({
     phone: commonSchemas.phone.required(),
-    otp: Joi.string().length(6).pattern(/^\d+$/).required(),
+    // Using 4-digit OTP in development (dummy OTP: 1234)
+    otp: Joi.string().length(4).pattern(/^\d+$/).required(),
     newPassword: commonSchemas.password.required(),
   }),
 

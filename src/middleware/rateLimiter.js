@@ -1,6 +1,12 @@
 const rateLimit = require('express-rate-limit');
 const MongoStore = require('rate-limit-mongo');
 
+// Environment flag
+const isDev = process.env.NODE_ENV !== 'production';
+
+// No-op middleware (bypass limiter in development when desired)
+const noLimit = (req, res, next) => next();
+
 // Create MongoDB store for rate limiting (optional, falls back to memory store)
 const createMongoStore = () => {
   // Temporarily disabled to fix double counting issue
@@ -52,8 +58,8 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
-// OTP rate limiter - very strict
-const otpLimiter = rateLimit({
+// OTP rate limiter - disabled in development for unlimited retries
+const otpLimiter = isDev ? noLimit : rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // Limit each IP to 5 OTP requests per hour
   message: rateLimitHandler,
@@ -64,15 +70,24 @@ const otpLimiter = rateLimit({
   skipSuccessfulRequests: false, // Count all requests
 });
 
-// Password reset limiter
-const passwordResetLimiter = rateLimit({
+// Password reset limiter - disabled in development for unlimited retries
+// In production, key by phone to avoid punishing shared IPs
+const passwordResetLimiter = isDev ? noLimit : rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 password reset attempts per hour
+  max: 3,
   message: rateLimitHandler,
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  // Use default key generator for IPv6 compatibility
+  keyGenerator: (req, _res) => {
+    try {
+      const body = req.body || {};
+      const phone = (body.phone || body.phoneNumber || '').toString().trim();
+      return phone || req.ip;
+    } catch (_) {
+      return req.ip;
+    }
+  },
 });
 
 // API rate limiter for general API endpoints

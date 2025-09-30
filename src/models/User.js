@@ -148,10 +148,14 @@ userSchema.pre('save', async function(next) {
 
 // Method to check password
 userSchema.methods.comparePassword = async function(candidatePassword) {
+  // Gracefully handle missing values and bcrypt errors
+  if (!candidatePassword || !this.password) {
+    return false;
+  }
   try {
     return await bcrypt.compare(candidatePassword, this.password);
-  } catch (error) {
-    throw new Error('Password comparison failed');
+  } catch (_) {
+    return false;
   }
 };
 
