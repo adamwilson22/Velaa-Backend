@@ -574,7 +574,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chassisNumber\": \"1HGBH41JXMN109186\",\n  \"engineNumber\": \"ENG123456789\",\n  \"registrationNumber\": \"MH01AB1234\",\n  \"brand\": \"Honda\",\n  \"model\": \"Civic\",\n  \"variant\": \"LXi\",\n  \"year\": 2023,\n  \"color\": \"White\",\n  \"fuelType\": \"Petrol\",\n  \"transmission\": \"Manual\",\n  \"mileage\": 15.5,\n  \"purchaseDate\": \"2023-01-15\",\n  \"purchasePrice\": 800000,\n  \"condition\": \"Excellent\",\n  \"status\": \"Available\",\n  \"location\": \"Main Warehouse\",\n  \"features\": [\"ABS\", \"Airbags\", \"Power Steering\"],\n  \"notes\": \"Brand new vehicle in excellent condition\"\n}"
+                  "raw": "{\n  \"chassisNumber\": \"1HGBH41JXMN109186\",\n  \"engineNumber\": \"ENG123456789\",\n  \"brand\": \"Honda\",\n  \"year\": 2023,\n  \"color\": \"White\",\n  \"mileage\": 15500,\n  \"owner\": \"{{clientId}}\",\n  \"status\": \"Available\",\n  \"marketValue\": 800000,\n  \"purchaseDate\": \"2023-01-15\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/vehicles",
@@ -792,9 +792,23 @@
                 "value": "application/json"
               }
             ],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "if (pm.response.code === 201) {",
+                    "  const data = pm.response.json().data;",
+                    "  if (data && data._id) { pm.collectionVariables.set('clientId', data._id); }",
+                    "}"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"+919876543211\",\n  \"address\": {\n    \"street\": \"789 Client Street\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"zipCode\": \"400003\",\n    \"country\": \"India\"\n  },\n  \"type\": \"Individual\",\n  \"notes\": \"Premium client\"\n}"
+              "raw": "{\n  \"name\": \"Owen Motors\",\n  \"phone\": \"+255 754 000001\",\n  \"type\": \"Dealer\",\n  \"isActive\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/clients",
@@ -802,6 +816,50 @@
               "path": ["clients"]
             },
             "description": "Create a new client"
+          }
+        }
+        ,
+        {
+          "name": "Create Client - Sample 2",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [ { "key": "token", "value": "{{authToken}}", "type": "string" } ]
+            },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Amani Logistics\",\n  \"phone\": \"+255 715 000002\",\n  \"type\": \"Company\",\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Create Client - Sample 3",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{authToken}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Neema Joseph\",\n  \"phone\": \"+255 689 000003\",\n  \"type\": \"Individual\",\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Create Client - Sample 4",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{authToken}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Dar Auto Hub\",\n  \"phone\": \"+255 754 000004\",\n  \"type\": \"Dealer\",\n  \"isActive\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Create Client - Sample 5",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{authToken}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Safari Rentals\",\n  \"phone\": \"+255 715 000005\",\n  \"type\": \"Company\",\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
           }
         }
       ]

@@ -23,23 +23,12 @@ const vehicleSchema = new mongoose.Schema({
     sparse: true, // Allows multiple null values but unique non-null values
   },
 
-  // Vehicle Details
+// Vehicle Details (UI fields only)
   brand: {
     type: String,
     required: [true, 'Brand is required'],
     trim: true,
     maxlength: [50, 'Brand name cannot exceed 50 characters'],
-  },
-  model: {
-    type: String,
-    required: [true, 'Model is required'],
-    trim: true,
-    maxlength: [50, 'Model name cannot exceed 50 characters'],
-  },
-  variant: {
-    type: String,
-    trim: true,
-    maxlength: [50, 'Variant cannot exceed 50 characters'],
   },
   year: {
     type: Number,
@@ -53,31 +42,7 @@ const vehicleSchema = new mongoose.Schema({
     trim: true,
     maxlength: [30, 'Color cannot exceed 30 characters'],
   },
-  fuelType: {
-    type: String,
-    required: [true, 'Fuel type is required'],
-    enum: ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid', 'LPG'],
-  },
-  transmission: {
-    type: String,
-    required: [true, 'Transmission type is required'],
-    enum: ['Manual', 'Automatic', 'CVT', 'AMT'],
-  },
-
-  // Technical Specifications
-  engineCapacity: {
-    type: Number,
-    min: [0, 'Engine capacity cannot be negative'],
-  },
-  mileage: {
-    type: Number,
-    min: [0, 'Mileage cannot be negative'],
-  },
-  seatingCapacity: {
-    type: Number,
-    min: [1, 'Seating capacity must be at least 1'],
-    max: [50, 'Seating capacity cannot exceed 50'],
-  },
+  mileage: { type: Number, min: [0, 'Mileage cannot be negative'], default: 0 },
 
   // Ownership & Client Information
   owner: {
@@ -85,77 +50,27 @@ const vehicleSchema = new mongoose.Schema({
     ref: 'Client',
     required: [true, 'Vehicle owner is required'],
   },
-  ownershipType: {
-    type: String,
-    enum: ['Individual', 'Company', 'Partnership', 'Trust'],
-    default: 'Individual',
-  },
-
-  // Vehicle Status
+  // Vehicle Status (UI: Available / Not available / Sold)
   status: {
     type: String,
-    enum: ['Available', 'Sold', 'Reserved', 'Under Maintenance', 'Damaged', 'Scrapped'],
+    enum: ['Available', 'Reserved', 'Sold'],
     default: 'Available',
   },
-  condition: {
-    type: String,
-    enum: ['Excellent', 'Good', 'Fair', 'Poor', 'Damaged'],
-    default: 'Good',
-  },
-
-  // Financial Information
-  purchasePrice: {
-    type: Number,
-    default: 0,
-    min: [0, 'Purchase price cannot be negative'],
-  },
-  sellingPrice: {
-    type: Number,
-    min: [0, 'Selling price cannot be negative'],
-  },
-  marketValue: {
-    type: Number,
-    min: [0, 'Market value cannot be negative'],
-  },
+  // Financial (UI: Asking price / Starting from)
+  marketValue: { type: Number, min: [0, 'Market value cannot be negative'], default: 0 },
 
   // Dates
   purchaseDate: {
     type: Date,
     default: Date.now,
   },
-  saleDate: {
-    type: Date,
-  },
-  registrationDate: {
-    type: Date,
-  },
-  insuranceExpiryDate: {
-    type: Date,
-  },
-  pucExpiryDate: {
-    type: Date,
-  },
+  bondExpiryDate: { type: Date },
 
   // Location & Storage
-  location: {
-    warehouse: {
-      type: String,
-      default: 'Main',
-      trim: true,
-    },
-    section: {
-      type: String,
-      trim: true,
-    },
-    row: {
-      type: String,
-      trim: true,
-    },
-    position: {
-      type: String,
-      trim: true,
-    },
-  },
+  // UI toggles
+  isActive: { type: Boolean, default: true },
+  showInMarketplace: { type: Boolean, default: false },
+  monthlyFee: { type: Number, min: 0, default: 0 },
 
   // Images and Documents
   images: [{
@@ -164,46 +79,7 @@ const vehicleSchema = new mongoose.Schema({
     isPrimary: { type: Boolean, default: false },
     uploadedAt: { type: Date, default: Date.now },
   }],
-  documents: [{
-    type: {
-      type: String,
-      enum: ['RC', 'Insurance', 'PUC', 'Invoice', 'NOC', 'Other'],
-      required: true,
-    },
-    url: { type: String, required: true },
-    expiryDate: { type: Date },
-    uploadedAt: { type: Date, default: Date.now },
-  }],
-
-  // Additional Information
-  features: [{
-    type: String,
-    trim: true,
-  }],
-  defects: [{
-    description: { type: String, required: true, trim: true },
-    severity: { 
-      type: String, 
-      enum: ['Minor', 'Major', 'Critical'], 
-      default: 'Minor' 
-    },
-    estimatedCost: { type: Number, min: 0 },
-    reportedAt: { type: Date, default: Date.now },
-  }],
-  
-  // Maintenance History
-  maintenanceHistory: [{
-    date: { type: Date, required: true },
-    type: { 
-      type: String, 
-      enum: ['Service', 'Repair', 'Inspection', 'Cleaning'],
-      required: true 
-    },
-    description: { type: String, required: true, trim: true },
-    cost: { type: Number, min: 0 },
-    performedBy: { type: String, trim: true },
-    nextServiceDue: { type: Date },
-  }],
+  // Removed document/defect/maintenance to match UI
 
   // Metadata
   tags: [{
@@ -211,11 +87,7 @@ const vehicleSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
   }],
-  notes: {
-    type: String,
-    trim: true,
-    maxlength: [1000, 'Notes cannot exceed 1000 characters'],
-  },
+  // Notes removed to match UI
   
   // Tracking
   createdBy: {
@@ -262,7 +134,7 @@ vehicleSchema.virtual('profitLoss').get(function() {
 // Indexes for better query performance
 vehicleSchema.index({ chassisNumber: 1 });
 vehicleSchema.index({ registrationNumber: 1 });
-vehicleSchema.index({ brand: 1, model: 1 });
+vehicleSchema.index({ brand: 1 });
 vehicleSchema.index({ status: 1 });
 vehicleSchema.index({ owner: 1 });
 vehicleSchema.index({ createdAt: -1 });
@@ -276,9 +148,7 @@ vehicleSchema.index({
   registrationNumber: 'text',
   brand: 'text',
   model: 'text',
-  variant: 'text',
   color: 'text',
-  notes: 'text',
 });
 
 // Pre-save middleware

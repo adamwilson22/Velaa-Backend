@@ -170,78 +170,40 @@ const userSchemas = {
 const vehicleSchemas = {
   create: Joi.object({
     // Minimal fields per design
-    chassisNumber: Joi.string().trim().uppercase().length(17).pattern(/^[A-HJ-NPR-Z0-9]{17}$/).required(),
+    chassisNumber: Joi.string().trim().uppercase().length(17)
+      .pattern(/^[A-HJ-NPR-Z0-9]{17}$/)
+      .message('chassisNumber must be a valid 17-character VIN (no I/O/Q)')
+      .required(),
     engineNumber: Joi.string().trim().uppercase().required(),
     brand: Joi.string().trim().min(1).max(50).required(),
-    model: Joi.string().trim().min(1).max(50).required(),
     year: Joi.number().integer().min(1900).max(new Date().getFullYear() + 1).required(),
     color: Joi.string().trim().min(1).max(30).required(),
-    fuelType: Joi.string().valid('Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid', 'LPG').required(),
-    transmission: Joi.string().valid('Manual', 'Automatic', 'CVT', 'AMT').required(),
+    mileage: Joi.number().min(0).default(0),
     owner: commonSchemas.objectId.required(),
-    // Optional fields kept but not enforced
-    registrationNumber: Joi.string().trim().uppercase().allow(''),
-    variant: Joi.string().trim().max(50).allow(''),
-    engineCapacity: Joi.number().min(0),
-    mileage: Joi.number().min(0),
-    seatingCapacity: Joi.number().integer().min(1).max(50),
-    ownershipType: Joi.string().valid('Individual', 'Company', 'Partnership', 'Trust').default('Individual'),
-    condition: Joi.string().valid('Excellent', 'Good', 'Fair', 'Poor', 'Damaged').default('Good'),
-    purchasePrice: Joi.number().min(0).default(0),
-    sellingPrice: Joi.number().min(0),
-    marketValue: Joi.number().min(0),
+    status: Joi.string().valid('Available', 'Reserved', 'Sold').default('Available'),
+    marketValue: Joi.number().min(0).default(0),
     purchaseDate: commonSchemas.date.default(() => new Date(), 'now'),
-    saleDate: commonSchemas.date,
-    registrationDate: commonSchemas.date,
-    insuranceExpiryDate: commonSchemas.date,
-    pucExpiryDate: commonSchemas.date,
-    location: Joi.object({
-      warehouse: Joi.string().trim().default('Main'),
-      section: Joi.string().trim().allow(''),
-      row: Joi.string().trim().allow(''),
-      position: Joi.string().trim().allow(''),
-    }).default({ warehouse: 'Main' }),
-    features: Joi.array().items(Joi.string().trim()),
-    notes: Joi.string().trim().max(1000).allow(''),
-    tags: Joi.array().items(Joi.string().trim().lowercase()),
+    // Optional tags
+    tags: Joi.array().items(Joi.string().trim().lowercase())
   }),
 
   update: Joi.object({
-    registrationNumber: Joi.string().trim().uppercase().allow(''),
-    variant: Joi.string().trim().max(50).allow(''),
     color: Joi.string().trim().min(1).max(30),
-    engineCapacity: Joi.number().min(0),
     mileage: Joi.number().min(0),
-    seatingCapacity: Joi.number().integer().min(1).max(50),
-    condition: Joi.string().valid('Excellent', 'Good', 'Fair', 'Poor', 'Damaged'),
-    sellingPrice: Joi.number().min(0),
+    status: Joi.string().valid('Available', 'Reserved', 'Sold'),
     marketValue: Joi.number().min(0),
-    saleDate: commonSchemas.date,
-    registrationDate: commonSchemas.date,
-    insuranceExpiryDate: commonSchemas.date,
-    pucExpiryDate: commonSchemas.date,
-    location: Joi.object({
-      warehouse: Joi.string().trim(),
-      section: Joi.string().trim().allow(''),
-      row: Joi.string().trim().allow(''),
-      position: Joi.string().trim().allow(''),
-    }),
-    features: Joi.array().items(Joi.string().trim()),
-    notes: Joi.string().trim().max(1000).allow(''),
+    purchaseDate: commonSchemas.date,
     tags: Joi.array().items(Joi.string().trim().lowercase()),
   }),
 
   updateStatus: Joi.object({
-    status: Joi.string().valid('Available', 'Sold', 'Reserved', 'Under Maintenance', 'Damaged', 'Scrapped').required(),
+    status: Joi.string().valid('Available', 'Reserved', 'Sold').required(),
   }),
 
   search: Joi.object({
     q: Joi.string().trim().min(1),
     brand: Joi.string().trim(),
-    model: Joi.string().trim(),
-    status: Joi.string().valid('Available', 'Sold', 'Reserved', 'Under Maintenance', 'Damaged', 'Scrapped'),
-    condition: Joi.string().valid('Excellent', 'Good', 'Fair', 'Poor', 'Damaged'),
-    fuelType: Joi.string().valid('Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid', 'LPG'),
+    status: Joi.string().valid('Available', 'Reserved', 'Sold'),
     yearFrom: Joi.number().integer().min(1900),
     yearTo: Joi.number().integer().max(new Date().getFullYear() + 1),
     priceFrom: Joi.number().min(0),
@@ -250,89 +212,26 @@ const vehicleSchemas = {
   }),
 };
 
-// Client validation schemas
+// Client validation schemas (minimal)
 const clientSchemas = {
   create: Joi.object({
-    type: Joi.string().valid('Individual', 'Company').default('Individual'),
-    firstName: Joi.when('type', {
-      is: 'Individual',
-      then: Joi.string().trim().min(2).max(50).required(),
-      otherwise: Joi.forbidden(),
-    }),
-    lastName: Joi.when('type', {
-      is: 'Individual',
-      then: Joi.string().trim().min(2).max(50).required(),
-      otherwise: Joi.forbidden(),
-    }),
-    companyName: Joi.when('type', {
-      is: 'Company',
-      then: Joi.string().trim().min(2).max(100).required(),
-      otherwise: Joi.forbidden(),
-    }),
-    contactPerson: Joi.when('type', {
-      is: 'Company',
-      then: Joi.string().trim().min(2).max(100).required(),
-      otherwise: Joi.forbidden(),
-    }),
-    email: commonSchemas.email,
+    name: Joi.string().trim().min(2).max(100).required(),
     phone: commonSchemas.phone.required(),
-    alternatePhone: commonSchemas.phone,
-    address: Joi.object({
-      street: Joi.string().trim().max(200).required(),
-      city: Joi.string().trim().max(50).required(),
-      state: Joi.string().trim().max(50).required(),
-      zipCode: Joi.string().trim().pattern(/^\d{5,6}$/).required(),
-      country: Joi.string().trim().default('India'),
-    }).required(),
-    creditLimit: Joi.number().min(0).default(0),
-    businessDetails: Joi.when('type', {
-      is: 'Company',
-      then: Joi.object({
-        gstNumber: Joi.string().trim().uppercase().pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/),
-        panNumber: Joi.string().trim().uppercase().pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/),
-        businessType: Joi.string().valid('Sole Proprietorship', 'Partnership', 'Private Limited', 'Public Limited', 'LLP', 'Other'),
-        establishedYear: Joi.number().integer().min(1900).max(new Date().getFullYear()),
-      }),
-      otherwise: Joi.forbidden(),
-    }),
-    notes: Joi.string().trim().max(1000).allow(''),
-    tags: Joi.array().items(Joi.string().trim().lowercase()),
+    type: Joi.string().valid('Individual', 'Dealer', 'Company').required(),
+    isActive: Joi.boolean().default(true),
   }),
 
   update: Joi.object({
-    firstName: Joi.string().trim().min(2).max(50),
-    lastName: Joi.string().trim().min(2).max(50),
-    companyName: Joi.string().trim().min(2).max(100),
-    contactPerson: Joi.string().trim().min(2).max(100),
-    email: commonSchemas.email,
-    alternatePhone: commonSchemas.phone,
-    address: Joi.object({
-      street: Joi.string().trim().max(200),
-      city: Joi.string().trim().max(50),
-      state: Joi.string().trim().max(50),
-      zipCode: Joi.string().trim().pattern(/^\d{5,6}$/),
-      country: Joi.string().trim(),
-    }),
-    creditLimit: Joi.number().min(0),
-    businessDetails: Joi.object({
-      gstNumber: Joi.string().trim().uppercase().pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/),
-      panNumber: Joi.string().trim().uppercase().pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/),
-      businessType: Joi.string().valid('Sole Proprietorship', 'Partnership', 'Private Limited', 'Public Limited', 'LLP', 'Other'),
-      establishedYear: Joi.number().integer().min(1900).max(new Date().getFullYear()),
-    }),
-    preferences: Joi.object({
-      preferredPaymentMethod: Joi.string().valid('Cash', 'Bank Transfer', 'Cheque', 'UPI', 'Credit Card', 'Debit Card'),
-      communicationPreference: Joi.string().valid('Phone', 'Email', 'SMS', 'WhatsApp'),
-      language: Joi.string(),
-    }),
-    notes: Joi.string().trim().max(1000).allow(''),
-    tags: Joi.array().items(Joi.string().trim().lowercase()),
+    name: Joi.string().trim().min(2).max(100),
+    phone: commonSchemas.phone,
+    type: Joi.string().valid('Individual', 'Dealer', 'Company'),
+    isActive: Joi.boolean(),
   }),
 
   search: Joi.object({
     q: Joi.string().trim().min(1),
-    type: Joi.string().valid('Individual', 'Company'),
-    status: Joi.string().valid('Active', 'Inactive', 'Blocked', 'Pending Verification'),
+    type: Joi.string().valid('Individual', 'Dealer', 'Company'),
+    isActive: Joi.boolean(),
     ...commonSchemas.pagination,
   }),
 };
