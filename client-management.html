@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Management - Velaa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="text"], input[type="tel"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        input[type="text"]:focus, input[type="tel"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .clients-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .clients-table th,
+        .clients-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        .clients-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .clients-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .type-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .type-individual {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .type-dealer {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .type-company {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .result.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .search-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .search-filters input,
+        .search-filters select {
+            flex: 1;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👥 Client Management</h1>
+            <p>Manage your clients efficiently</p>
+        </div>
+        
+        <div class="content">
+            <!-- Authentication Section -->
+            <div class="section">
+                <h3>🔐 Authentication</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="authToken">Auth Token:</label>
+                        <input type="text" id="authToken" placeholder="Enter your JWT token">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn" onclick="setAuthToken()">
+                            Set Token
+                        </button>
+                    </div>
+                </div>
+                <div id="authStatus" class="result hidden"></div>
+            </div>
+            
+            <!-- Create Client Section -->
+            <div class="section">
+                <h3>➕ Create New Client</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="clientName">Client Name:</label>
+                        <input type="text" id="clientName" placeholder="Enter client name">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientPhone">Phone Number:</label>
+                        <input type="tel" id="clientPhone" placeholder="+255 754 000001">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="clientType">Client Type:</label>
+                        <select id="clientType">
+                            <option value="Individual">Individual</option>
+                            <option value="Dealer">Dealer</option>
+                            <option value="Company">Company</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="clientActive">Status:</label>
+                        <select id="clientActive">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" onclick="createClient()">
+                    ➕ Create Client
+                </button>
+            </div>
+            
+            <!-- Search and Filter Section -->
+            <div class="section">
+                <h3>🔍 Search & Filter Clients</h3>
+                <div class="search-filters">
+                    <input type="text" id="searchQuery" placeholder="Search by name or phone...">
+                    <select id="filterType">
+                        <option value="">All Types</option>
+                        <option value="Individual">Individual</option>
+                        <option value="Dealer">Dealer</option>
+                        <option value="Company">Company</option>
+                    </select>
+                    <select id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                    <button type="button" class="btn" onclick="searchClients()">
+                        🔍 Search
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="loadClients()">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Clients List Section -->
+            <div class="section">
+                <h3>📋 Clients List</h3>
+                <div id="clientsTableContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading clients...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Processing request...</p>
+            </div>
+            
+            <!-- Result Display -->
+            <div id="result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <!-- Edit Client Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h3>✏️ Edit Client</h3>
+            <div class="form-group">
+                <label for="editClientName">Client Name:</label>
+                <input type="text" id="editClientName" placeholder="Enter client name">
+            </div>
+            <div class="form-group">
+                <label for="editClientPhone">Phone Number:</label>
+                <input type="tel" id="editClientPhone" placeholder="+255 754 000001">
+            </div>
+            <div class="form-group">
+                <label for="editClientType">Client Type:</label>
+                <select id="editClientType">
+                    <option value="Individual">Individual</option>
+                    <option value="Dealer">Dealer</option>
+                    <option value="Company">Company</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editClientActive">Status:</label>
+                <select id="editClientActive">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <button type="button" class="btn btn-success" onclick="updateClient()">
+                💾 Update Client
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+                ❌ Cancel
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        let currentToken = null;
+        let currentClients = [];
+        let editingClientId = null;
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showResult(data, isError = false) {
+            hideLoading();
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function makeRequest(endpoint, method = 'GET', data = null) {
+            try {
+                showLoading();
+                
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+
+                if (currentToken) {
+                    options.headers['Authorization'] = `Bearer ${currentToken}`;
+                }
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                console.log(`Making ${method} request to: ${API_BASE}${endpoint}`);
+                console.log('Request options:', options);
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const responseData = await response.json();
+
+                console.log('API response:', responseData);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${responseData.message || 'Request failed'}`);
+                }
+
+                showResult(responseData);
+                return responseData;
+            } catch (error) {
+                console.error('Request failed:', error);
+                showResult({
+                    error: error.message,
+                    details: 'Check browser console for more details'
+                }, true);
+                throw error;
+            }
+        }
+
+        function setAuthToken() {
+            const token = document.getElementById('authToken').value.trim();
+            if (!token) {
+                showResult({
+                    error: 'Please enter a valid auth token'
+                }, true);
+                return;
+            }
+            
+            currentToken = token;
+            document.getElementById('authStatus').style.display = 'block';
+            document.getElementById('authStatus').className = 'result success';
+            document.getElementById('authStatus').textContent = 'Auth token set successfully!';
+            
+            // Load clients after setting token
+            loadClients();
+        }
+
+        async function createClient() {
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const type = document.getElementById('clientType').value;
+            const isActive = document.getElementById('clientActive').value === 'true';
+
+            if (!name || !phone) {
+                showResult({
+                    error: 'Please fill in client name and phone number'
+                }, true);
+                return;
+            }
+
+            if (!currentToken) {
+                showResult({
+                    error: 'Please set your auth token first'
+                }, true);
+                return;
+            }
+
+            try {
+                const response = await makeRequest('/clients', 'POST', {
+                    name,
+                    phone,
+                    type,
+                    isActive
+                });
+
+                if (response.success) {
+                    showResult({
+                        message: 'Client created successfully!',
+                        client: response.data
+                    });
+                    
+                    // Clear form
+                    document.getElementById('clientName').value = '';
+                    document.getElementById('clientPhone').value = '';
+                    document.getElementById('clientType').value = 'Individual';
+                    document.getElementById('clientActive').value = 'true';
+                    
+                    // Reload clients list
+                    loadClients();
+                }
+            } catch (error) {
+                console.error('Create client failed:', error);
+            }
+        }
+
+        async function loadClients() {
+            if (!currentToken) {
+                document.getElementById('clientsTableContainer').innerHTML = 
+                    '<div class="result error">Please set your auth token first</div>';
+                return;
+            }
+
+            try {
+                const response = await makeRequest('/clients?page=1&limit=100');
+                
+                if (response.success) {
+                    currentClients = response.data;
+                    renderClientsTable(currentClients);
+                }
+            } catch (error) {
+                console.error('Load clients failed:', error);
+                document.getElementById('clientsTableContainer').innerHTML = 
+                    '<div class="result error">Failed to load clients. Check console for details.</div>';
+            }
+        }
+
+        async function searchClients() {
+            if (!currentToken) {
+                showResult({
+                    error: 'Please set your auth token first'
+                }, true);
+                return;
+            }
+
+            const query = document.getElementById('searchQuery').value.trim();
+            const type = document.getElementById('filterType').value;
+            const status = document.getElementById('filterStatus').value;
+
+            let endpoint = '/clients?page=1&limit=100';
+            const params = [];
+            
+            if (query) params.push(`q=${encodeURIComponent(query)}`);
+            if (type) params.push(`type=${encodeURIComponent(type)}`);
+            if (status) params.push(`isActive=${status}`);
+            
+            if (params.length > 0) {
+                endpoint += '&' + params.join('&');
+            }
+
+            try {
+                const response = await makeRequest(endpoint);
+                
+                if (response.success) {
+                    currentClients = response.data;
+                    renderClientsTable(currentClients);
+                }
+            } catch (error) {
+                console.error('Search clients failed:', error);
+            }
+        }
+
+        function renderClientsTable(clients) {
+            const container = document.getElementById('clientsTableContainer');
+            
+            if (!clients || clients.length === 0) {
+                container.innerHTML = '<div class="result">No clients found</div>';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            clients.forEach(client => {
+                const createdDate = new Date(client.createdAt).toLocaleDateString();
+                const statusClass = client.isActive ? 'status-active' : 'status-inactive';
+                const statusText = client.isActive ? 'Active' : 'Inactive';
+                const typeClass = `type-${client.type.toLowerCase()}`;
+                
+                tableHTML += `
+                    <tr>
+                        <td><strong>${client.name}</strong></td>
+                        <td>${client.phone}</td>
+                        <td><span class="type-badge ${typeClass}">${client.type}</span></td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${createdDate}</td>
+                        <td>
+                            <button class="btn btn-small" onclick="editClient('${client._id}')">
+                                ✏️ Edit
+                            </button>
+                            <button class="btn btn-small btn-danger" onclick="deleteClient('${client._id}')">
+                                🗑️ Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        function editClient(clientId) {
+            const client = currentClients.find(c => c._id === clientId);
+            if (!client) {
+                showResult({
+                    error: 'Client not found'
+                }, true);
+                return;
+            }
+
+            editingClientId = clientId;
+            
+            // Populate edit form
+            document.getElementById('editClientName').value = client.name;
+            document.getElementById('editClientPhone').value = client.phone;
+            document.getElementById('editClientType').value = client.type;
+            document.getElementById('editClientActive').value = client.isActive.toString();
+            
+            // Show modal
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingClientId = null;
+        }
+
+        async function updateClient() {
+            if (!editingClientId) {
+                showResult({
+                    error: 'No client selected for editing'
+                }, true);
+                return;
+            }
+
+            const name = document.getElementById('editClientName').value.trim();
+            const phone = document.getElementById('editClientPhone').value.trim();
+            const type = document.getElementById('editClientType').value;
+            const isActive = document.getElementById('editClientActive').value === 'true';
+
+            if (!name || !phone) {
+                showResult({
+                    error: 'Please fill in client name and phone number'
+                }, true);
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`/clients/${editingClientId}`, 'PUT', {
+                    name,
+                    phone,
+                    type,
+                    isActive
+                });
+
+                if (response.success) {
+                    showResult({
+                        message: 'Client updated successfully!',
+                        client: response.data
+                    });
+                    
+                    closeEditModal();
+                    loadClients();
+                }
+            } catch (error) {
+                console.error('Update client failed:', error);
+            }
+        }
+
+        async function deleteClient(clientId) {
+            if (!confirm('Are you sure you want to delete this client?')) {
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`/clients/${clientId}`, 'DELETE');
+
+                if (response.success) {
+                    showResult({
+                        message: 'Client deleted successfully!',
+                        clientId: clientId
+                    });
+                    
+                    loadClients();
+                }
+            } catch (error) {
+                console.error('Delete client failed:', error);
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        }
+
+        // Load clients on page load if token is available
+        window.addEventListener('load', function() {
+            console.log('Client Management page loaded');
+            // Check if there's a stored token
+            const storedToken = localStorage.getItem('velaa_auth_token');
+            if (storedToken) {
+                document.getElementById('authToken').value = storedToken;
+                setAuthToken();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -382,33 +382,39 @@ const validationHelpers = {
 
   // Validate Tanzania phone number specifically
   isValidTanzaniaPhone: (phone) => {
+    if (!phone || typeof phone !== 'string') return false;
+    
     // Remove all non-digit characters except +
     const cleanPhone = phone.replace(/[\s-()]/g, '');
     
-    // Tanzania country code is +255
-    // Mobile numbers: +255 6XX XXX XXX, +255 7XX XXX XXX, +255 8XX XXX XXX
-    // Landline numbers: +255 22 XXX XXXX (Dar es Salaam), +255 27 XXX XXXX (Mwanza), etc.
+    // Tanzania phone number patterns:
+    // Mobile: +255 6XX XXX XXX, +255 7XX XXX XXX, +255 8XX XXX XXX (9 digits after +255)
+    // Landline: +255 22 XXX XXXX, +255 24 XXX XXXX, etc. (8 digits after +255)
     
-    // Pattern 1: +255 followed by 9 digits (mobile)
-    // Pattern 2: 255 followed by 9 digits (mobile without +)
-    // Pattern 3: 0 followed by 9 digits (local format)
-    // Pattern 4: 9 digits starting with 6, 7, or 8 (mobile without country code)
+    // International format patterns
+    const mobilePattern = /^\+255[678]\d{8}$/; // +255 + 6/7/8 + 8 digits = 12 total
+    const landlinePattern = /^\+255(2[2-8]|23|24|25|26|27|28)\d{7}$/; // +255 + 22-28 + 7 digits = 12 total
     
-    const patterns = [
-      /^\+255[678]\d{8}$/,           // +255 6/7/8XX XXX XXX (international mobile)
-      /^255[678]\d{8}$/,             // 255 6/7/8XX XXX XXX (without + prefix)
-      /^0[678]\d{8}$/,               // 0 6/7/8XX XXX XXX (local mobile format)
-      /^[678]\d{8}$/,                // 6/7/8XX XXX XXX (mobile without country code)
-      /^\+25522\d{7}$/,              // +255 22 XXX XXXX (Dar es Salaam landline)
-      /^25522\d{7}$/,                // 255 22 XXX XXXX (landline without +)
-      /^022\d{7}$/,                  // 022 XXX XXXX (local landline format)
-    ];
+    // Local format patterns (without +255)
+    const localMobilePattern = /^0[678]\d{8}$/; // 0 + 6/7/8 + 8 digits = 10 total
+    const localLandlinePattern = /^0(2[2-8]|23|24|25|26|27|28)\d{7}$/; // 0 + 22-28 + 7 digits = 10 total
     
-    return patterns.some(pattern => pattern.test(cleanPhone));
+    // Mobile without leading 0
+    const mobileNoZeroPattern = /^[678]\d{8}$/; // 6/7/8 + 8 digits = 9 total
+    const landlineNoZeroPattern = /^(2[2-8]|23|24|25|26|27|28)\d{7}$/; // 22-28 + 7 digits = 9 total
+    
+    return mobilePattern.test(cleanPhone) || 
+           landlinePattern.test(cleanPhone) ||
+           localMobilePattern.test(cleanPhone) ||
+           localLandlinePattern.test(cleanPhone) ||
+           mobileNoZeroPattern.test(cleanPhone) ||
+           landlineNoZeroPattern.test(cleanPhone);
   },
 
   // Normalize Tanzania phone number to international format
   normalizeTanzaniaPhone: (phone) => {
+    if (!phone || typeof phone !== 'string') return phone;
+    
     // Remove all non-digit characters except +
     const cleanPhone = phone.replace(/[\s-()]/g, '');
     
@@ -421,7 +427,7 @@ const validationHelpers = {
       return '+255' + cleanPhone.substring(1); // Replace 0 with +255
     } else if (/^[678]\d{8}$/.test(cleanPhone)) {
       return '+255' + cleanPhone; // Mobile number without country code
-    } else if (cleanPhone.startsWith('22') && cleanPhone.length === 9) {
+    } else if (/^(2[2-8]|23|24|25|26|27|28)\d{7}$/.test(cleanPhone)) {
       return '+255' + cleanPhone; // Landline without country code
     }
     

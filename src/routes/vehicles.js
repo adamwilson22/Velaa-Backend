@@ -5,8 +5,8 @@ const router = express.Router();
 const { authenticate, requireManager } = require('../middleware/auth');
 const { validate, validateQuery, validateParams } = require('../middleware/validation');
 const { apiLimiter, uploadLimiter, searchLimiter } = require('../middleware/rateLimiter');
-const { uploadVehicleImages, uploadVehicleDocuments, handleUploadError } = require('../middleware/upload');
 const { vehicleSchemas, paramSchemas, querySchemas } = require('../middleware/validation');
+const { uploadVehicleImages, handleUploadError } = require('../middleware/upload');
 
 // Import controllers
 const vehicleController = require('../controllers/vehicleController');
@@ -18,105 +18,53 @@ router.use(authenticate);
 router.get('/',
   apiLimiter,
   validateQuery(querySchemas.pagination),
-  vehicleController.getAllVehicles
+  vehicleController.getAll
 );
 
 router.post('/',
   apiLimiter,
   validate(vehicleSchemas.create),
-  vehicleController.createVehicle
+  vehicleController.create
 );
 
 router.get('/search',
   searchLimiter,
-  validateQuery(vehicleSchemas.search),
-  vehicleController.searchVehicles
+  validateQuery(querySchemas.pagination),
+  vehicleController.search
 );
 
 router.get('/stats',
   apiLimiter,
-  vehicleController.getVehicleStats
+  vehicleController.getStats
 );
 
 router.get('/:id',
   apiLimiter,
   validateParams(paramSchemas.id),
-  vehicleController.getVehicleById
+  vehicleController.getById
 );
 
 router.put('/:id',
   apiLimiter,
   validateParams(paramSchemas.id),
   validate(vehicleSchemas.update),
-  vehicleController.updateVehicle
+  (req, res, next) => { if (process.env.NODE_ENV !== 'production') console.log('[ROUTE] PUT /vehicles/:id body (sanitized):', req.body); next(); },
+  vehicleController.update
 );
 
 router.delete('/:id',
-  requireManager,
-  validateParams(paramSchemas.id),
-  vehicleController.deleteVehicle
-);
-
-router.put('/:id/status',
   apiLimiter,
   validateParams(paramSchemas.id),
-  validate(vehicleSchemas.updateStatus),
-  vehicleController.updateVehicleStatus
+  vehicleController.remove
 );
 
-// File upload routes
+// Image upload route
 router.post('/:id/images',
   uploadLimiter,
   validateParams(paramSchemas.id),
   uploadVehicleImages,
   handleUploadError,
-  vehicleController.uploadVehicleImages
-);
-
-router.post('/:id/documents',
-  uploadLimiter,
-  validateParams(paramSchemas.id),
-  uploadVehicleDocuments,
-  handleUploadError,
-  vehicleController.uploadVehicleDocuments
-);
-
-router.delete('/:id/images/:imageId',
-  apiLimiter,
-  validateParams(paramSchemas.id),
-  vehicleController.deleteVehicleImage
-);
-
-router.delete('/:id/documents/:documentId',
-  apiLimiter,
-  validateParams(paramSchemas.id),
-  vehicleController.deleteVehicleDocument
-);
-
-// Maintenance routes
-router.get('/:id/maintenance',
-  apiLimiter,
-  validateParams(paramSchemas.id),
-  vehicleController.getMaintenanceHistory
-);
-
-router.post('/:id/maintenance',
-  apiLimiter,
-  validateParams(paramSchemas.id),
-  vehicleController.addMaintenanceRecord
-);
-
-// Defect routes
-router.get('/:id/defects',
-  apiLimiter,
-  validateParams(paramSchemas.id),
-  vehicleController.getVehicleDefects
-);
-
-router.post('/:id/defects',
-  apiLimiter,
-  validateParams(paramSchemas.id),
-  vehicleController.addVehicleDefect
+  vehicleController.uploadImages
 );
 
 module.exports = router;

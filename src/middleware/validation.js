@@ -3,6 +3,7 @@ const Joi = require('joi');
 // Helper function to validate request data
 const validate = (schema) => {
   return (req, res, next) => {
+    const rawBody = req.body; // capture before Joi strips unknowns
     const { error, value } = schema.validate(req.body, {
       abortEarly: false, // Return all validation errors
       stripUnknown: true, // Remove unknown fields
@@ -23,6 +24,17 @@ const validate = (schema) => {
 
     // Replace req.body with validated and sanitized data
     req.body = value;
+
+    // DEV LOG: show sanitized vs raw for debugging update issues
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const limitedRaw = JSON.parse(JSON.stringify(rawBody || {}));
+        const limitedSanitized = JSON.parse(JSON.stringify(value || {}));
+        console.log('\n[VALIDATION] %s %s', req.method, req.originalUrl);
+        console.log('[VALIDATION] Raw body   :', limitedRaw);
+        console.log('[VALIDATION] Sanitized  :', limitedSanitized);
+      } catch (_) {}
+    }
     next();
   };
 };
@@ -102,6 +114,12 @@ const commonSchemas = {
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
     sort: Joi.string().default('-createdAt'),
+    search: Joi.string().trim().allow(''),
+    q: Joi.string().trim().allow(''),
+    type: Joi.string().trim().allow(''),
+    isActive: Joi.string().allow(''),
+    sortBy: Joi.string().allow(''),
+    sortOrder: Joi.string().valid('asc', 'desc').allow(''),
   },
 };
 
@@ -169,45 +187,56 @@ const userSchemas = {
 // Vehicle validation schemas
 const vehicleSchemas = {
   create: Joi.object({
-    // Minimal fields per design
-    chassisNumber: Joi.string().trim().uppercase().length(17)
-      .pattern(/^[A-HJ-NPR-Z0-9]{17}$/)
-      .message('chassisNumber must be a valid 17-character VIN (no I/O/Q)')
+    // Required fields
+    chassisNumber: Joi.string().trim().uppercase().min(8).max(17)
+      .pattern(/^[A-HJ-NPR-Z0-9]+$/)
+      .message('chassisNumber must contain only valid VIN characters (no I/O/Q)')
       .required(),
-    engineNumber: Joi.string().trim().uppercase().required(),
+    owner: commonSchemas.objectId.required(),
     brand: Joi.string().trim().min(1).max(50).required(),
     year: Joi.number().integer().min(1900).max(new Date().getFullYear() + 1).required(),
     color: Joi.string().trim().min(1).max(30).required(),
-    mileage: Joi.number().min(0).default(0),
-    owner: commonSchemas.objectId.required(),
-    status: Joi.string().valid('Available', 'Reserved', 'Sold').default('Available'),
+    
+    // Optional fields
     marketValue: Joi.number().min(0).default(0),
-    purchaseDate: commonSchemas.date.default(() => new Date(), 'now'),
-    // Optional tags
-    tags: Joi.array().items(Joi.string().trim().lowercase())
+    showInMarketplace: Joi.boolean().default(false),
+    mileage: Joi.number().min(0).default(0),
+    status: Joi.string().valid('Available', 'Reserved', 'Sold').default('Available'),
+    isActive: Joi.boolean().default(true),
+    monthlyFee: Joi.number().min(0).default(0),
+    purchaseDate: commonSchemas.date.default(() => new Date()),
+    bondExpiryDate: commonSchemas.date.allow(null),
+    tags: Joi.array().items(Joi.string().trim().lowercase()),
+    images: Joi.array().items(Joi.object({
+      url: Joi.string().uri().required(),
+      caption: Joi.string().trim().allow(''),
+      isPrimary: Joi.boolean().default(false)
+    }))
   }),
 
   update: Joi.object({
+    chassisNumber: Joi.string().trim().uppercase().min(8).max(17)
+      .pattern(/^[A-HJ-NPR-Z0-9]+$/),
+    owner: commonSchemas.objectId,
+    brand: Joi.string().trim().min(1).max(50),
+    year: Joi.number().integer().min(1900).max(new Date().getFullYear() + 1),
     color: Joi.string().trim().min(1).max(30),
+    marketValue: Joi.number().min(0),
+    showInMarketplace: Joi.boolean(),
     mileage: Joi.number().min(0),
     status: Joi.string().valid('Available', 'Reserved', 'Sold'),
-    marketValue: Joi.number().min(0),
+    isActive: Joi.boolean(),
+    monthlyFee: Joi.number().min(0),
     purchaseDate: commonSchemas.date,
+    bondExpiryDate: commonSchemas.date.allow(null),
     tags: Joi.array().items(Joi.string().trim().lowercase()),
-  }),
-
-  updateStatus: Joi.object({
-    status: Joi.string().valid('Available', 'Reserved', 'Sold').required(),
   }),
 
   search: Joi.object({
     q: Joi.string().trim().min(1),
     brand: Joi.string().trim(),
     status: Joi.string().valid('Available', 'Reserved', 'Sold'),
-    yearFrom: Joi.number().integer().min(1900),
-    yearTo: Joi.number().integer().max(new Date().getFullYear() + 1),
-    priceFrom: Joi.number().min(0),
-    priceTo: Joi.number().min(0),
+    owner: commonSchemas.objectId,
     ...commonSchemas.pagination,
   }),
 };

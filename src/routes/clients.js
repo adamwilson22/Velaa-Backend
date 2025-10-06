@@ -38,13 +38,13 @@ router.post('/',
 
 router.get('/search',
   searchLimiter,
-  validateQuery(clientSchemas.search),
-  clientController.getAll
+  validateQuery(querySchemas.pagination),
+  clientController.search
 );
 
 router.get('/stats',
   apiLimiter,
-  clientController.getAll
+  clientController.getStats
 );
 
 router.get('/:id',
@@ -61,7 +61,7 @@ router.put('/:id',
 );
 
 router.delete('/:id',
-  requireManager,
+  apiLimiter,
   validateParams(paramSchemas.id),
   clientController.remove
 );

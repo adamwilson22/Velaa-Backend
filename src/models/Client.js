@@ -31,7 +31,6 @@ const clientSchema = new mongoose.Schema({
 });
 
 clientSchema.index({ name: 1 });
-clientSchema.index({ phone: 1 }, { unique: true });
 clientSchema.index({ type: 1 });
 clientSchema.index({ isActive: 1 });
 

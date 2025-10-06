@@ -16,12 +16,7 @@ const vehicleSchema = new mongoose.Schema({
     trim: true,
     uppercase: true,
   },
-  registrationNumber: {
-    type: String,
-    trim: true,
-    uppercase: true,
-    sparse: true, // Allows multiple null values but unique non-null values
-  },
+  // registrationNumber removed from minimal UI flow
 
 // Vehicle Details (UI fields only)
   brand: {
@@ -93,7 +88,7 @@ const vehicleSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false, // Made optional for API testing
   },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -133,7 +128,7 @@ vehicleSchema.virtual('profitLoss').get(function() {
 
 // Indexes for better query performance
 vehicleSchema.index({ chassisNumber: 1 });
-vehicleSchema.index({ registrationNumber: 1 });
+// registrationNumber index removed
 vehicleSchema.index({ brand: 1 });
 vehicleSchema.index({ status: 1 });
 vehicleSchema.index({ owner: 1 });
@@ -141,13 +136,11 @@ vehicleSchema.index({ createdAt: -1 });
 vehicleSchema.index({ purchaseDate: -1 });
 vehicleSchema.index({ 'location.warehouse': 1 });
 
-// Text index for search functionality
+// Text index for search functionality (limited to fields we keep)
 vehicleSchema.index({
   chassisNumber: 'text',
   engineNumber: 'text',
-  registrationNumber: 'text',
   brand: 'text',
-  model: 'text',
   color: 'text',
 });
 
