@@ -7,8 +7,7 @@ const { validateQuery } = require('../middleware/validation');
 const { apiLimiter, reportLimiter } = require('../middleware/rateLimiter');
 const { querySchemas } = require('../middleware/validation');
 
-// Import controllers (will be created)
-// const dashboardController = require('../controllers/dashboardController');
+const dashboardController = require('../controllers/dashboardController');
 
 // Placeholder route handlers
 const placeholder = (req, res) => {
@@ -23,10 +22,10 @@ const placeholder = (req, res) => {
 // All routes require authentication
 router.use(authenticate);
 
-// Dashboard statistics
-router.get('/stats',
+// Single consolidated endpoint for dashboard overview
+router.get('/overview',
   apiLimiter,
-  placeholder // dashboardController.getDashboardStats
+  dashboardController.getOverview
 );
 
 router.get('/recent-activity',
