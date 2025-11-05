@@ -106,11 +106,19 @@ router.get('/list',
       // Get all billing records (or filtered by period)
       const bills = await Billing
         .find(query)
-        .populate('client', 'name')
+        .populate({
+          path: 'client',
+          select: 'name',
+          options: { strictPopulate: false } // Allow null/undefined client refs
+        })
         .populate({
           path: 'vehicle',
           select: 'chassisNumber brand purchaseDate monthlyFee owner',
-          populate: { path: 'owner', select: 'name' }
+          populate: { 
+            path: 'owner', 
+            select: 'name',
+            options: { strictPopulate: false }
+          }
         })
         .sort({ billingPeriod: -1, dueDate: 1 }) // Sort by period (newest first) then by due date
         .lean();
@@ -147,11 +155,19 @@ router.get('/list',
           // Fetch bills again after generation
           const newBills = await Billing
             .find(query)
-            .populate('client', 'name')
+            .populate({
+              path: 'client',
+              select: 'name',
+              options: { strictPopulate: false }
+            })
             .populate({
               path: 'vehicle',
               select: 'chassisNumber brand purchaseDate monthlyFee owner',
-              populate: { path: 'owner', select: 'name' }
+              populate: { 
+                path: 'owner', 
+                select: 'name',
+                options: { strictPopulate: false }
+              }
             })
             .sort({ billingPeriod: -1, dueDate: 1 })
             .lean();
