@@ -1,0 +1,79 @@
+====================================
+MINIMAL ENVIRONMENT VARIABLES FOR VERCEL
+====================================
+
+These are the ONLY variables actually used in your codebase.
+Add these to: Vercel Dashboard → Settings → Environment Variables
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 CRITICAL - MUST SET (Required for app to work)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NODE_ENV=production
+
+MONGODB_URI=mongodb+srv://devapptage:uKMebmZpgNfCZA7j@cluster0.kvpuxgv.mongodb.net/velaa_vehicle_management
+
+JWT_SECRET=07ee73db58055957d74cbb26dfc745446faf28f3150eba28511f385de9f92666880340b9c133eed7440f59f431917de089263dd96a55ed39b0fed5845c54cec8
+
+ALLOWED_ORIGINS=https://your-frontend-app.vercel.app,http://localhost:3000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🟡 RECOMMENDED - Set these for better control
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+JWT_EXPIRE=7d
+JWT_REFRESH_EXPIRE=30d
+
+MOCK_SMS=true
+(Set to true for now since SMS is using mock OTP 1234)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🟢 OPTIONAL - Only if you want real SMS (currently using mock)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_PHONE_NUMBER=your-twilio-phone-number
+
+(Set MOCK_SMS=false when you add real Twilio credentials)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ NOT USED - Can skip these (for future use)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These are NOT currently used in your codebase:
+- PORT (Vercel auto-assigns)
+- SESSION_SECRET (not found in code)
+- SMTP_* (email service not actively used)
+- REDIS_URL, CACHE_TTL (Redis not implemented)
+- BACKUP_* (backup not implemented)
+- LOG_FILE (uses console logging)
+- DEBUG (not used)
+- MAX_FILE_SIZE, UPLOAD_PATH (hardcoded in upload.js)
+- RATE_LIMIT_* (hardcoded defaults)
+- BCRYPT_SALT_ROUNDS (uses bcrypt defaults)
+- ENABLE_EMAIL_NOTIFICATIONS, etc. (not found in code)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 QUICK SETUP INSTRUCTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to: https://vercel.com/osamathebahrian-1851s-projects/velaabackend/settings/environment-variables
+
+2. Add these 5 variables (minimum):
+   ✅ NODE_ENV = production
+   ✅ MONGODB_URI = mongodb+srv://devapptage:uKMebmZpgNfCZA7j@cluster0.kvpuxgv.mongodb.net/velaa_vehicle_management
+   ✅ JWT_SECRET = 07ee73db58055957d74cbb26dfc745446faf28f3150eba28511f385de9f92666880340b9c133eed7440f59f431917de089263dd96a55ed39b0fed5845c54cec8
+   ✅ ALLOWED_ORIGINS = https://your-frontend-app.vercel.app,http://localhost:3000
+   ✅ MOCK_SMS = true
+
+3. Select "Production" environment for each
+
+4. Click "Save"
+
+5. Go to Deployments tab → Click "Redeploy"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After frontend is deployed, update ALLOWED_ORIGINS with your frontend URL!
+
