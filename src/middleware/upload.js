@@ -2,10 +2,25 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure upload directories exist
+// Ensure upload directories exist (skip in serverless environments)
 const ensureDirectoryExists = (dirPath) => {
+  // In serverless (Vercel), directories don't persist and can't be created
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    // Skip directory creation in serverless - files should use cloud storage
+    return;
+  }
+  
   if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
+    try {
+      fs.mkdirSync(dirPath, { recursive: true });
+    } catch (err) {
+      // Silently fail in serverless environments
+      if (process.env.VERCEL) {
+        console.warn(`Could not create directory ${dirPath} in serverless environment`);
+        return;
+      }
+      throw err;
+    }
   }
 };
 
