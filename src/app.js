@@ -83,7 +83,11 @@ const corsOptions = {
   exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
 };
 
+// CORS middleware - must be before routes
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Compression middleware
 app.use(compression());
