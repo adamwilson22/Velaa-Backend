@@ -116,6 +116,37 @@ if (process.env.NODE_ENV === 'development') {
 // Rate limiting
 app.use(generalLimiter);
 
+// Database connection middleware - ensure DB is connected for API routes
+const connectDB = require('./config/database');
+const mongoose = require('mongoose');
+app.use('/api', async (req, res, next) => {
+  // Skip health check
+  if (req.path === '/health' || req.path === '/docs') {
+    return next();
+  }
+
+  // Check if already connected
+  if (mongoose.connection.readyState === 1) {
+    return next();
+  }
+
+  // Try to connect
+  try {
+    if (mongoose.connection.readyState === 0 || mongoose.connection.readyState === 3) {
+      await connectDB();
+    }
+  } catch (err) {
+    console.error('Database connection error in middleware:', err.message);
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection failed',
+      error: 'Service temporarily unavailable'
+    });
+  }
+
+  next();
+});
+
 // Static files (only serve if directory exists - skip in serverless)
 const fs = require('fs');
 const uploadsPath = path.join(__dirname, '../uploads');
