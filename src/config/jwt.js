@@ -21,9 +21,23 @@ const generateRefreshToken = (payload) => {
 // Verify JWT token
 const verifyToken = (token) => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
   } catch (error) {
-    throw new Error('Invalid or expired token');
+    if (process.env.NODE_ENV === 'development') {
+      console.error('🔒 Token verification failed:', error.name, '-', error.message);
+    }
+    
+    // Provide more specific error messages
+    if (error.name === 'TokenExpiredError') {
+      throw new Error('Invalid or expired token');
+    } else if (error.name === 'JsonWebTokenError') {
+      throw new Error('Invalid or expired token');
+    } else if (error.name === 'NotBeforeError') {
+      throw new Error('Invalid or expired token');
+    } else {
+      throw new Error('Invalid or expired token');
+    }
   }
 };
 

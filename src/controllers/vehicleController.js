@@ -228,7 +228,34 @@ class VehicleController {
       // Populate owner details
       await vehicle.populate('owner', 'name phone type');
 
-      return responseHelpers.success(res, vehicle, 'Vehicle created successfully', HTTP_STATUS.CREATED);
+      // Auto-create current month's billing if eligible
+      let autoBillingMeta = null;
+      try {
+        console.log('[VEHICLE CREATE] Starting auto-billing for vehicle:', vehicle._id);
+        console.log('[VEHICLE CREATE] Eligibility check: owner=', vehicle.owner?._id, 'monthlyFee=', vehicle.monthlyFee, 'isActive=', vehicle.isActive, 'status=', vehicle.status);
+        
+        const { ensureMonthlyInvoice } = require('../services/billingService');
+        const now = new Date();
+        const period = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        const userId = (req.user && (req.user.userId || req.user._id)) || vehicle.owner?._id;
+        
+        console.log('[VEHICLE CREATE] Calling ensureMonthlyInvoice with period:', period, 'userId:', userId);
+        const ensureRes = await ensureMonthlyInvoice(vehicle._id, period, userId);
+        
+        autoBillingMeta = { 
+          period, 
+          created: !!(ensureRes && ensureRes.created), 
+          billId: ensureRes && ensureRes.bill ? ensureRes.bill._id : null 
+        };
+        
+        console.log('[VEHICLE CREATE] Auto-billing result:', autoBillingMeta);
+      } catch (autoErr) {
+        console.error('[VEHICLE CREATE] Auto-billing ensure failed:', autoErr.message);
+        console.error('[VEHICLE CREATE] Auto-billing error stack:', autoErr.stack);
+        autoBillingMeta = { period: null, created: false, billId: null, error: autoErr.message };
+      }
+
+      return responseHelpers.success(res, { vehicle, autoBilling: autoBillingMeta }, 'Vehicle created successfully', HTTP_STATUS.CREATED);
     } catch (error) {
       console.error('Error creating vehicle:', error);
       if (error.name === 'ValidationError') {

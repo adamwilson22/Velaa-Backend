@@ -4,231 +4,54 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 package-lock.json
-yarn.lock
 
 # Environment variables
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+.env.production
+.env.development
+
+# Vercel
+.vercel
+
+# Uploads directory (files should be in cloud storage for production)
+uploads/*
+!uploads/.gitkeep
 
 # Logs
 logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-.pnpm-debug.log*
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# OS files
+.DS_Store
+Thumbs.db
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
-.grunt
-
-# Bower dependency directory (https://bower.io/)
-bower_components
-
-# node-waf configuration
-.lock-wscript
-
-# Compiled binary addons (https://nodejs.org/api/addons.html)
-build/Release
-
-# Dependency directories
-jspm_packages/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Gatsby files
-.cache/
-public
-
-# Storybook build outputs
-.out
-.storybook-out
-
-# Temporary folders
-tmp/
-temp/
-
-# Editor directories and files
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Testing
+coverage/
+.nyc_output/
 
-# Database files
-*.sqlite
-*.sqlite3
-*.db
+# Build
+dist/
+build/
+
+# Temporary files
+.tmp/
+temp/
+*.tmp
 
 # Backup files
 *.backup
 *.bak
-backups/
+*.old
 
-# Upload directories (keep structure but ignore content)
-uploads/*
-!uploads/.gitkeep
-
-# Test files and coverage
-test-results/
-coverage/
-*.lcov
-
-# Build files
-build/
-dist/
-
-# Documentation build
-docs/build/
-
-# Temporary files
-*.tmp
-*.temp
-
-# Archive files (zip, rar, etc.) - usually shouldn't be in repo
+# Archives
 *.zip
-*.rar
-*.7z
-*.tar
-*.tar.gz
-
-# SSL certificates and keys
-*.pem
-*.key
-*.cert
-*.crt
-*.p12
-*.pfx
-
-# MongoDB dumps
-*.dump
-
-# Redis dumps
-*.rdb
-
-# Session files
-sessions/
-
-# Cache files
-.cache/
-*.cache
-
-# PM2 files
-.pm2/
-
-# Docker files (if not needed in repo)
-# Dockerfile
-# docker-compose.yml
-# .dockerignore
-
-# Serverless directories
-.serverless/
-
-# AWS configuration
-.aws/
-
-# Terraform files (if using infrastructure as code)
-*.tfstate
-*.tfstate.*
-.terraform/
-
-# Local configuration overrides
-config/local.js
-config/local.json
-
-# JetBrains IDEs
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# Visual Studio Code
-.vscode/
-!.vscode/extensions.json
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
-# Vim
-*.swp
-*.swo
-*~
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-
-# Local development files
-dev/
-development/
-local/
-
-# Miscellaneous
-*.orig
-*.rej
-*.patch
+Archive.zip

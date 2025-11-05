@@ -15,7 +15,11 @@
     "seed": "node scripts/seed.js",
     "migrate": "node scripts/migrate.js",
     "backup": "node scripts/backup.js",
-    "restore": "node scripts/restore.js"
+    "restore": "node scripts/restore.js",
+    "seed:monthly": "node scripts/seed-monthly-billing.js",
+    "cleanup:seed": "node scripts/cleanup-and-seed-billing.js",
+    "link:vehicle": "node scripts/link-vehicle-owner.js",
+    "reset:vehicles": "node scripts/reset-vehicles-and-seed.js"
   },
   "keywords": [
     "vehicle",

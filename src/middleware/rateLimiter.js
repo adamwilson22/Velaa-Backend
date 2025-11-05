@@ -79,15 +79,7 @@ const passwordResetLimiter = isDev ? noLimit : rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: createMongoStore(),
-  keyGenerator: (req, _res) => {
-    try {
-      const body = req.body || {};
-      const phone = (body.phone || body.phoneNumber || '').toString().trim();
-      return phone || req.ip;
-    } catch (_) {
-      return req.ip;
-    }
-  },
+  // Use default key generator for IPv6 compatibility
 });
 
 // API rate limiter for general API endpoints

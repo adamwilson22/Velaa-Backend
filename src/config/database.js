@@ -1,12 +1,38 @@
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+// Cache the database connection for serverless environments (Vercel)
+let cachedConnection = null;
 
+const connectDB = async () => {
+  // If we have a cached connection and it's ready, use it
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    console.log('Using cached MongoDB connection');
+    return cachedConnection;
+  }
+
+  try {
+    // For serverless, we want to reuse connections
+    const options = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    };
+
+    const conn = await mongoose.connect(process.env.MONGODB_URI, options);
+    
+    cachedConnection = conn;
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    
+    return conn;
   } catch (error) {
     console.error('Database connection error:', error.message);
+    
+    // In serverless environments, don't exit the process
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      throw error;
+    }
+    
     process.exit(1);
   }
 };

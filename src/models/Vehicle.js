@@ -105,10 +105,11 @@ vehicleSchema.virtual('age').get(function() {
   return new Date().getFullYear() - this.year;
 });
 
-// Virtual for primary image
+// Virtual for primary image (guard when images not selected)
 vehicleSchema.virtual('primaryImage').get(function() {
-  const primary = this.images.find(img => img.isPrimary);
-  return primary ? primary.url : (this.images.length > 0 ? this.images[0].url : null);
+  const imgs = Array.isArray(this.images) ? this.images : [];
+  const primary = imgs.find(img => img.isPrimary);
+  return primary ? primary.url : (imgs.length > 0 ? imgs[0].url : null);
 });
 
 // Virtual for days in inventory

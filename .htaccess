@@ -1,0 +1,53 @@
+# Velaa Backend .htaccess for cPanel deployment
+# This file configures Apache for Node.js backend deployment
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Handle CORS preflight requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Proxy all requests to Node.js backend
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ http://localhost:5001/$1 [P,L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# CORS headers
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "https://velaa.the4loop.com"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header always set Access-Control-Allow-Credentials "true"
+</IfModule>
+
+# Cache control for API responses
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/json "access plus 0 seconds"
+    ExpiresByType text/plain "access plus 0 seconds"
+</IfModule>
+
+# Disable server signature
+ServerSignature Off
+
+# Hide .env files
+<Files ".env*">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Hide sensitive files
+<FilesMatch "\.(env|log|sql|backup)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

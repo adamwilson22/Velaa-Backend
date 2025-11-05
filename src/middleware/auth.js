@@ -8,6 +8,7 @@ const authenticate = async (req, res, next) => {
     const authHeader = req.header('Authorization');
     
     if (!authHeader) {
+      console.log('🔒 Auth failed: No Authorization header provided');
       return res.status(401).json({
         success: false,
         message: 'Access denied. No token provided.',
@@ -20,19 +21,30 @@ const authenticate = async (req, res, next) => {
       : authHeader;
 
     if (!token) {
+      console.log('🔒 Auth failed: Empty token after extraction');
       return res.status(401).json({
         success: false,
         message: 'Access denied. Invalid token format.',
       });
     }
 
+    // Log token validation attempt in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔑 Attempting to verify token:', token.substring(0, 20) + '...');
+    }
+
     // Verify token
     const decoded = verifyToken(token);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Token verified, userId:', decoded.userId);
+    }
     
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {
+      console.log('🔒 Auth failed: User not found for userId:', decoded.userId);
       return res.status(401).json({
         success: false,
         message: 'Token is valid but user not found.',
@@ -40,6 +52,7 @@ const authenticate = async (req, res, next) => {
     }
 
     if (!user.isActive) {
+      console.log('🔒 Auth failed: User account is deactivated:', user._id);
       return res.status(401).json({
         success: false,
         message: 'Account is deactivated.',
@@ -48,10 +61,15 @@ const authenticate = async (req, res, next) => {
 
     // Check if account is locked
     if (user.isLocked) {
+      console.log('🔒 Auth failed: User account is locked:', user._id);
       return res.status(401).json({
         success: false,
         message: 'Account is temporarily locked due to multiple failed login attempts.',
       });
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ User authenticated:', user.phone, '- Role:', user.role);
     }
 
     // Add user to request object
@@ -59,16 +77,19 @@ const authenticate = async (req, res, next) => {
     next();
   } catch (error) {
     if (error.message === 'Invalid or expired token') {
+      console.log('🔒 Auth failed: Token is invalid or expired');
+      console.log('Error details:', error.message);
       return res.status(401).json({
         success: false,
         message: 'Token is invalid or expired.',
       });
     }
 
-    console.error('Authentication error:', error);
+    console.error('❌ Authentication error:', error);
     return res.status(500).json({
       success: false,
       message: 'Authentication failed.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

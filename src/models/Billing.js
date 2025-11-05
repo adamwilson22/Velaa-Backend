@@ -191,6 +191,18 @@ const billingSchema = new mongoose.Schema({
     },
   }],
   
+  // Recurrence helpers (for monthly invoices)
+  billingPeriod: { // 'YYYY-MM'
+    type: String,
+    required: [true, 'Billing period is required']
+  },
+  cycleAnchorDay: { // 1..28 recommended
+    type: Number,
+    default: 1,
+    min: 1,
+    max: 28
+  },
+  
   // Reminder Information
   reminders: [{
     sentDate: {
@@ -267,6 +279,7 @@ billingSchema.index({ invoiceDate: -1 });
 billingSchema.index({ dueDate: 1 });
 billingSchema.index({ createdAt: -1 });
 billingSchema.index({ transactionType: 1 });
+billingSchema.index({ vehicle: 1, transactionType: 1, billingPeriod: 1 }, { unique: true });
 
 // Compound indexes
 billingSchema.index({ client: 1, status: 1 });
@@ -317,6 +330,13 @@ billingSchema.pre('save', function(next) {
   if (this.paymentStatus !== 'Paid' && new Date() > this.dueDate) {
     this.paymentStatus = 'Overdue';
     this.status = 'Overdue';
+  }
+
+  // Backfill billingPeriod if missing
+  if (!this.billingPeriod) {
+    const basis = this.dueDate || this.invoiceDate || new Date();
+    const mm = String(basis.getMonth() + 1).padStart(2, '0');
+    this.billingPeriod = `${basis.getFullYear()}-${mm}`;
   }
   
   next();

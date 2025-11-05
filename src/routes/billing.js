@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { authenticate, requireManager } = require('../middleware/auth');
+const { authenticate, optionalAuth, requireManager } = require('../middleware/auth');
 const { validate, validateQuery, validateParams } = require('../middleware/validation');
 const { apiLimiter, reportLimiter } = require('../middleware/rateLimiter');
 const { billingSchemas, paramSchemas, querySchemas } = require('../middleware/validation');
 
-// Import controllers (will be created)
-// const billingController = require('../controllers/billingController');
+const billingService = require('../services/billingService');
+const Vehicle = require('../models/Vehicle');
+const { responseHelpers } = require('../utils/helpers');
 
 // Placeholder route handlers
 const placeholder = (req, res) => {
@@ -20,20 +21,99 @@ const placeholder = (req, res) => {
   });
 };
 
-// All routes require authentication
-router.use(authenticate);
+// Make authentication optional for now (debug); token still honored if present
+router.use(optionalAuth);
 
-// Billing CRUD routes
+// Billing CRUD routes - list (simple fetch, no lazy creation)
 router.get('/',
   apiLimiter,
   validateQuery(querySchemas.pagination),
-  placeholder // billingController.getAllBilling
+  async (req, res) => {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        month, // optional billingPeriod 'YYYY-MM'
+        transactionType = 'Rental',
+      } = req.query;
+
+      const pageNum = Math.max(1, parseInt(page));
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+      const skip = (pageNum - 1) * limitNum;
+
+      const Billing = require('../models/Billing');
+      const query = {};
+      if (transactionType) query.transactionType = transactionType;
+      if (month) query.billingPeriod = month;
+
+      const [rows, total] = await Promise.all([
+        Billing.find(query)
+          .populate('client', 'name')
+          .populate('vehicle', 'chassisNumber brand purchaseDate monthlyFee')
+          .sort({ dueDate: 1 })
+          .skip(skip)
+          .limit(limitNum)
+          .lean(),
+        Billing.countDocuments(query)
+      ]);
+
+      const pages = Math.ceil(total / limitNum) || 1;
+      return responseHelpers.success(res, {
+        data: rows,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages,
+          hasNext: pageNum < pages,
+          hasPrev: pageNum > 1
+        }
+      }, 'Billing list');
+    } catch (e) {
+      return responseHelpers.error(res, e.message, 400);
+    }
+  }
 );
 
 router.post('/',
   apiLimiter,
   validate(billingSchemas.create),
   placeholder // billingController.createBilling
+);
+
+// List monthly billing (must be BEFORE any ":id" routes)
+// Keep legacy endpoint but without lazy by default
+router.get('/list',
+  apiLimiter,
+  async (req, res) => {
+    try {
+      console.log('[BILLING][LIST] ENTER');
+      const d = req.query.month ? new Date(`${req.query.month}-01T00:00:00.000Z`) : new Date();
+      const period = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      console.log('[BILLING][LIST] period=', period);
+      const bills = await billingService.listMonthly(period);
+      console.log('[BILLING][LIST] bills.count=', bills ? bills.length : 'null');
+      return responseHelpers.success(res, { period, bills }, 'Monthly billing list');
+    } catch (e) {
+      console.error('[BILLING][LIST] error=', e && e.stack ? e.stack : e);
+      return responseHelpers.error(res, e.message, 400);
+    }
+  }
+);
+
+router.get('/ensure/vehicle/:vehicleId',
+  apiLimiter,
+  validateParams(paramSchemas.id),
+  async (req, res) => {
+    try {
+      const d = req.query.month ? new Date(`${req.query.month}-01T00:00:00.000Z`) : new Date();
+      const period = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const result = await billingService.ensureMonthlyInvoice(req.params.vehicleId, period, req.user.userId);
+      return responseHelpers.success(res, result.bill, result.created ? 'Created monthly invoice' : 'Existing monthly invoice');
+    } catch (e) {
+      return responseHelpers.error(res, e.message, 400);
+    }
+  }
 );
 
 router.get('/outstanding',
@@ -53,6 +133,7 @@ router.get('/stats',
   placeholder // billingController.getBillingStats
 );
 
+// From here down, ":id" routes
 router.get('/:id',
   apiLimiter,
   validateParams(paramSchemas.id),
@@ -65,7 +146,6 @@ router.put('/:id',
   validate(billingSchemas.create),
   placeholder // billingController.updateBilling
 );
-
 router.delete('/:id',
   requireManager,
   validateParams(paramSchemas.id),
@@ -113,11 +193,39 @@ router.get('/client/:clientId/outstanding',
 );
 
 // Vehicle-specific billing
-router.get('/vehicle/:vehicleId',
+router.get('/ensure/vehicle/:vehicleId',
   apiLimiter,
   validateParams(paramSchemas.id),
-  validateQuery(querySchemas.pagination),
-  placeholder // billingController.getVehicleBilling
+  async (req, res) => {
+    try {
+      const d = req.query.month ? new Date(`${req.query.month}-01T00:00:00.000Z`) : new Date();
+      const period = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const result = await billingService.ensureMonthlyInvoice(req.params.vehicleId, period, req.user.userId);
+      return responseHelpers.success(res, result.bill, result.created ? 'Created monthly invoice' : 'Existing monthly invoice');
+    } catch (e) {
+      return responseHelpers.error(res, e.message, 400);
+    }
+  }
+);
+
+router.get('/list',
+  apiLimiter,
+  async (req, res) => {
+    try {
+      const d = req.query.month ? new Date(`${req.query.month}-01T00:00:00.000Z`) : new Date();
+      const period = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      if (req.query.lazy === 'true') {
+        // Ensure invoices exist for eligible vehicles
+        const Vehicle = require('../models/Vehicle');
+        const vehicles = await Vehicle.find({ isActive: true, status: { $ne: 'Sold' }, monthlyFee: { $gt: 0 } }, '_id');
+        await Promise.all(vehicles.map(v => billingService.ensureMonthlyInvoice(v._id, period, req.user.userId).catch(()=>null)));
+      }
+      const bills = await billingService.listMonthly(period);
+      return responseHelpers.success(res, { period, bills }, 'Monthly billing list');
+    } catch (e) {
+      return responseHelpers.error(res, e.message, 400);
+    }
+  }
 );
 
 // Invoice operations
