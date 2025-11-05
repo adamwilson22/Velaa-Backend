@@ -81,19 +81,87 @@ router.post('/',
   placeholder // billingController.createBilling
 );
 
-// List monthly billing (must be BEFORE any ":id" routes)
-// Keep legacy endpoint but without lazy by default
+// List billing records (all by default, or filtered by month)
 router.get('/list',
   apiLimiter,
   async (req, res) => {
     try {
       console.log('[BILLING][LIST] ENTER');
-      const d = req.query.month ? new Date(`${req.query.month}-01T00:00:00.000Z`) : new Date();
-      const period = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      console.log('[BILLING][LIST] period=', period);
-      const bills = await billingService.listMonthly(period);
-      console.log('[BILLING][LIST] bills.count=', bills ? bills.length : 'null');
-      return responseHelpers.success(res, { period, bills }, 'Monthly billing list');
+      const Billing = require('../models/Billing');
+      
+      // Build query - show all billing records by default
+      const query = { transactionType: 'Rental' };
+      
+      // Filter by month if specified
+      let period = null;
+      if (req.query.month) {
+        const d = new Date(`${req.query.month}-01T00:00:00.000Z`);
+        period = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        query.billingPeriod = period;
+        console.log('[BILLING][LIST] Filtering by period:', period);
+      } else {
+        console.log('[BILLING][LIST] Showing all billing records (no month filter)');
+      }
+      
+      // Get all billing records (or filtered by period)
+      const bills = await Billing
+        .find(query)
+        .populate('client', 'name')
+        .populate({
+          path: 'vehicle',
+          select: 'chassisNumber brand purchaseDate monthlyFee owner',
+          populate: { path: 'owner', select: 'name' }
+        })
+        .sort({ billingPeriod: -1, dueDate: 1 }) // Sort by period (newest first) then by due date
+        .lean();
+      
+      console.log('[BILLING][LIST] Total bills found:', bills.length);
+      
+      // If no bills found and lazy generation is enabled, generate them for current month
+      if (bills.length === 0 && req.query.lazy === 'true') {
+        console.log('[BILLING][LIST] Lazy generation enabled, creating bills for eligible vehicles');
+        const Vehicle = require('../models/Vehicle');
+        const d = new Date();
+        const currentPeriod = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        
+        const vehicles = await Vehicle.find({ 
+          isActive: true, 
+          status: { $ne: 'Sold' }, 
+          monthlyFee: { $gt: 0 },
+          owner: { $exists: true, $ne: null }
+        }, '_id');
+        
+        console.log('[BILLING][LIST] Found', vehicles.length, 'eligible vehicles');
+        const userId = req.user && (req.user.userId || req.user._id);
+        
+        if (vehicles.length > 0 && userId) {
+          await Promise.all(
+            vehicles.map(v => 
+              billingService.ensureMonthlyInvoice(v._id, currentPeriod, userId).catch(err => {
+                console.error('[BILLING][LIST] Failed to create invoice for vehicle', v._id, ':', err.message);
+                return null;
+              })
+            )
+          );
+          
+          // Fetch bills again after generation
+          const newBills = await Billing
+            .find(query)
+            .populate('client', 'name')
+            .populate({
+              path: 'vehicle',
+              select: 'chassisNumber brand purchaseDate monthlyFee owner',
+              populate: { path: 'owner', select: 'name' }
+            })
+            .sort({ billingPeriod: -1, dueDate: 1 })
+            .lean();
+          
+          console.log('[BILLING][LIST] bills.count after lazy generation=', newBills.length);
+          return responseHelpers.success(res, { period: period || 'all', bills: newBills }, 'Billing list');
+        }
+      }
+      
+      return responseHelpers.success(res, { period: period || 'all', bills }, 'Billing list');
     } catch (e) {
       console.error('[BILLING][LIST] error=', e && e.stack ? e.stack : e);
       return responseHelpers.error(res, e.message, 400);
