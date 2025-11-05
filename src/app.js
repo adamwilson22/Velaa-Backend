@@ -112,8 +112,21 @@ if (process.env.NODE_ENV === 'development') {
 // Rate limiting
 app.use(generalLimiter);
 
-// Static files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static files (only serve if directory exists - skip in serverless)
+const fs = require('fs');
+const uploadsPath = path.join(__dirname, '../uploads');
+if (fs.existsSync(uploadsPath)) {
+  app.use('/uploads', express.static(uploadsPath));
+} else {
+  // In serverless environments, uploads are handled by cloud storage
+  app.use('/uploads', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Uploads directory not available in serverless environment',
+      note: 'Files should be stored in cloud storage (S3, Cloudinary, etc.)'
+    });
+  });
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
